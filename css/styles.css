@@ -1,0 +1,229 @@
+/* =========================
+   VARIABLES
+   ========================= */
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --accent-color: #e74c3c;
+    --light-color: #ecf0f1;
+    --success-color: #27ae60;
+}
+
+/* =========================
+   BASE
+   ========================= */
+* { box-sizing: border-box; }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* =========================
+   NAVBAR
+   ========================= */
+.navbar {
+    background: linear-gradient(90deg, var(--secondary-color), #223243);
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.navbar .navbar-brand {
+    color: var(--light-color);
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    font-size: 1rem;
+}
+
+.navbar .navbar-text {
+    color: var(--light-color);
+    font-size: 0.88rem;
+}
+
+/* =========================
+   CARDS / CABECERAS / BADGES
+   ========================= */
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    transition: transform 0.22s ease;
+    margin-bottom: 20px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.card:hover { transform: translateY(-5px); }
+
+.card-header {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    padding: 1rem 1.25rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    background: linear-gradient(180deg, #ffffff, #fbfcfd);
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* headers por rol */
+.card-header.role-teacher { color: var(--primary-color); }
+.card-header.role-student { color: var(--success-color); }
+.card-header.role-director { color: #b08900; }
+
+/* cuando uses bg-primary/ text-white en header*/
+.card-header.bg-primary, .card-header.bg-primary * { color: var(--secondary-color) !important; }
+
+/* badge estilo por rol */
+.badge-role {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.badge-role.teacher { background: rgba(52,152,219,0.12); color: var(--primary-color); border: 1px solid rgba(52,152,219,0.14); }
+.badge-role.student { background: rgba(39,174,96,0.10); color: var(--success-color); border: 1px solid rgba(39,174,96,0.12); }
+.badge-role.director { background: rgba(241,196,15,0.10); color: #b08900; border: 1px solid rgba(241,196,15,0.12); }
+
+.header-actions { display:flex; gap:0.5rem; align-items:center; }
+
+/* =========================
+   BOTONES
+   ========================= */
+.btn {
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-weight: 600;
+    transition: all 0.18s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid rgba(0,0,0,0.06);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+.btn-primary:hover { background-color: #2980b9; border-color: #2980b9; }
+
+/* botones secundarios pequeños en headers */
+.btn-sm { padding: 0.35rem 0.5rem; font-size: 0.85rem; border-radius: 6px; }
+
+/* botón circular usado para opciones 1..5 */
+.btn.rounded-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    padding: 0;
+}
+
+/* estilo para inputs tipo "btn-check" (radios con label botón) */
+.btn-check:checked + .btn,
+.btn-check:focus + .btn {
+    background-color: rgba(0,0,0,0.06);
+    color: #000;
+}
+
+/* =========================
+   FORMULARIOS Y CONTROLES
+   ========================= */
+.form-control, .form-select {
+    border-radius: 8px;
+    box-shadow: none;
+    border: 1px solid rgba(0,0,0,0.06);
+    padding: 0.5rem 0.625rem;
+}
+
+.login-container {
+    max-width: 420px;
+    margin: 60px auto;
+    padding: 0;
+}
+
+/* =========================
+   LAYOUT / TABS / SECCIONES
+   ========================= */
+#role-tabs { gap: 0.5rem; display:flex; flex-wrap:wrap; margin-bottom: 1rem; }
+.tab-button {
+    background: transparent;
+    border: 1px solid rgba(0,0,0,0.06);
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: #2f3a48;
+    cursor: pointer;
+}
+.tab-button.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.role-section { display: none; }
+.role-section .card { overflow: hidden; }
+.active-section { display: block; }
+
+.evaluation-item {
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+.dashboard-card { height: 100%; }
+
+/* escala y layout de los items */
+.evaluation-scale { display: flex; justify-content: space-between; margin-top: 10px; gap: 8px; }
+.scale-item { text-align: center; flex: 1; padding: 5px; color: #555; font-size: 0.9rem; }
+
+/* chart container */
+.chart-container { background: linear-gradient(180deg,#ffffff,#fafbfc); padding: 12px; border-radius: 8px; position: relative; height: 300px; margin-bottom: 30px; }
+
+/* tablas */
+.table-responsive .table { background: white; border-radius: 8px; overflow: hidden; }
+#indicators-table td, #indicators-table th { vertical-align: middle; padding: 0.6rem 0.75rem; }
+
+/* =========================
+   LOGIN SPECÍFICO (mejor integrado)
+   ========================= */
+.login-card { max-width: 420px; margin: 60px auto; }
+.login-card .card-body { padding: 1.25rem; }
+.login-card .card-footer { background: transparent; border-top: none; color: #6b7280; font-size: 0.85rem; }
+
+.login-card .card-header {
+    background: linear-gradient(90deg, var(--primary-color), #2c88d0);
+    color: #fff;
+}
+
+.login-card h2, .login-card h4 { color: var(--secondary-color); margin: 0; font-weight: 700; }
+
+.login-container h2 { color: var(--secondary-color); font-weight: 700; margin-bottom: 1.5rem; }
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 576px) {
+    .login-container { margin: 40px 16px; }
+    .navbar .navbar-brand { font-size: 0.95rem; }
+    .chart-container { height: 220px; }
+}
+
+/* =========================
+   UTILS (pequeños ajustes)
+   ========================= */
+.text-muted { color: #6b7280 !important; }
+.small { font-size: 0.85rem; }
