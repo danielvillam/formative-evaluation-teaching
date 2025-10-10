@@ -1,4 +1,4 @@
-// Datos de ejemplo para probar app
+// Example data for testing the app
 export const evaluationItems = [
     { id: 1, category: "Identidad profesional", text: "Comprendo y respondo a las necesidades formativas de los estudiantes" },
     { id: 2, category: "Identidad profesional", text: "Reflexiono y genero cambios en mis prácticas pedagógicas a partir de los resultados de aprendizaje de mis estudiantes" },

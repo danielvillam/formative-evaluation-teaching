@@ -3,8 +3,8 @@ export function renderLoginSection() {
     <div class="container mt-5" id="login-section">
         <div class="login-card">
             <div class="card">
-                <div class="card-header bg-primary">
-                    <h4 class="mb-0">Iniciar Sesión</h4>
+                <div class="card-header bg-primary text-center">
+                    <h4 class="mb-0 w-100 text-center">Iniciar Sesión</h4>
                 </div>
 
                 <div class="card-body">
@@ -28,18 +28,22 @@ export function renderLoginSection() {
                             <label for="role" class="form-label">Rol</label>
                             <select class="form-select" id="role" aria-label="Selecciona tu rol" required>
                                 <option value="">-- Seleccione un rol --</option>
-                                <option value="teacher">Docente</option>
                                 <option value="student">Estudiante</option>
+                                <option value="teacher">Docente</option>
                                 <option value="director">Directivo</option>
                             </select>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+                        <button type="submit" class="btn btn-primary w-100 d-flex justify-content-center align-items-center">Ingresar</button>
                     </form>
                 </div>
 
                 <div class="card-footer text-center small text-muted">
-                    Acceso al Sistema de Evaluación Formativa
+                    <div class="mb-1">
+                        <strong>Ejemplo:</strong> Correo: prueba@unal.edu.co | Contraseña: 123
+                    </div>
+                    <br>
+                    <i>Acceso al Sistema de Evaluación Formativa</i>
                 </div>
             </div>
         </div>

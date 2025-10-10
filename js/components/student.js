@@ -47,7 +47,7 @@ export function renderStudentSection() {
 export function populateTeachers() {
     const select = document.getElementById('select-teacher');
     if (!select) return;
-    // clear previous options except placeholder
+    // Clear previous options except for the placeholder
     select.innerHTML = '<option value="">-- Seleccione un docente --</option>';
     teachers.forEach(teacher => {
         const option = document.createElement('option');
@@ -66,7 +66,7 @@ export function renderStudentEvaluationItems() {
         const itemElement = document.createElement('div');
         itemElement.className = 'evaluation-item mb-3';
 
-        // "button" style radios from 1 to 5
+        // Render radio buttons (1-5) with the same style as teacher self-evaluation (blue outline)
         let buttonsHTML = '';
         for (let i = 1; i <= 5; i++) {
             buttonsHTML += `
@@ -76,7 +76,7 @@ export function renderStudentEvaluationItems() {
                     id="eval-${item.id}-${i}"
                     value="${i}"
                     data-id="${item.id}">
-                <label class="btn btn-outline-secondary rounded-circle me-2" 
+                <label class="btn btn-outline-primary rounded-circle me-2" 
                     for="eval-${item.id}-${i}">
                     ${i}
                 </label>

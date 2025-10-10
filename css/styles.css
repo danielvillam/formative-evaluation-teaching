@@ -1,6 +1,6 @@
 /* =========================
-   VARIABLES
-   ========================= */
+    VARIABLES
+    ========================= */
 :root {
     --primary-color: #3498db;
     --secondary-color: #2c3e50;
@@ -10,8 +10,8 @@
 }
 
 /* =========================
-   BASE
-   ========================= */
+    BASE STYLES
+    ========================= */
 * { box-sizing: border-box; }
 
 body {
@@ -24,8 +24,8 @@ body {
 }
 
 /* =========================
-   NAVBAR
-   ========================= */
+    NAVBAR STYLES
+    ========================= */
 .navbar {
     background: linear-gradient(90deg, var(--secondary-color), #223243);
     padding: 0.75rem 1rem;
@@ -45,8 +45,8 @@ body {
 }
 
 /* =========================
-   CARDS / CABECERAS / BADGES
-   ========================= */
+    CARDS / HEADERS / BADGES
+    ========================= */
 .card {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.08);
@@ -71,15 +71,15 @@ body {
     justify-content: space-between;
 }
 
-/* headers por rol */
+/* Header color by role */
 .card-header.role-teacher { color: var(--primary-color); }
 .card-header.role-student { color: var(--success-color); }
 .card-header.role-director { color: #b08900; }
 
-/* cuando uses bg-primary/ text-white en header*/
+/* When using bg-primary/text-white in header */
 .card-header.bg-primary, .card-header.bg-primary * { color: var(--secondary-color) !important; }
 
-/* badge estilo por rol */
+/* Badge style by role */
 .badge-role {
     font-size: 0.65rem;
     padding: 0.25rem 0.5rem;
@@ -95,8 +95,8 @@ body {
 .header-actions { display:flex; gap:0.5rem; align-items:center; }
 
 /* =========================
-   BOTONES
-   ========================= */
+    BUTTONS
+    ========================= */
 .btn {
     border-radius: 8px;
     padding: 0.5rem 0.75rem;
@@ -116,10 +116,10 @@ body {
 }
 .btn-primary:hover { background-color: #2980b9; border-color: #2980b9; }
 
-/* botones secundarios pequeños en headers */
+/* Small secondary buttons in headers */
 .btn-sm { padding: 0.35rem 0.5rem; font-size: 0.85rem; border-radius: 6px; }
 
-/* botón circular usado para opciones 1..5 */
+/* Circular button used for 1..5 options */
 .btn.rounded-circle {
     width: 40px;
     height: 40px;
@@ -131,7 +131,7 @@ body {
     padding: 0;
 }
 
-/* estilo para inputs tipo "btn-check" (radios con label botón) */
+/* Style for btn-check inputs (radio with button label) */
 .btn-check:checked + .btn,
 .btn-check:focus + .btn {
     background-color: rgba(0,0,0,0.06);
@@ -139,8 +139,8 @@ body {
 }
 
 /* =========================
-   FORMULARIOS Y CONTROLES
-   ========================= */
+    FORMS AND CONTROLS
+    ========================= */
 .form-control, .form-select {
     border-radius: 8px;
     box-shadow: none;
@@ -155,8 +155,8 @@ body {
 }
 
 /* =========================
-   LAYOUT / TABS / SECCIONES
-   ========================= */
+    LAYOUT / TABS / SECTIONS
+    ========================= */
 #role-tabs { gap: 0.5rem; display:flex; flex-wrap:wrap; margin-bottom: 1rem; }
 .tab-button {
     background: transparent;
@@ -186,20 +186,20 @@ body {
 
 .dashboard-card { height: 100%; }
 
-/* escala y layout de los items */
+/* Scale and layout for evaluation items */
 .evaluation-scale { display: flex; justify-content: space-between; margin-top: 10px; gap: 8px; }
 .scale-item { text-align: center; flex: 1; padding: 5px; color: #555; font-size: 0.9rem; }
 
-/* chart container */
+/* Chart container */
 .chart-container { background: linear-gradient(180deg,#ffffff,#fafbfc); padding: 12px; border-radius: 8px; position: relative; height: 300px; margin-bottom: 30px; }
 
-/* tablas */
+/* Tables */
 .table-responsive .table { background: white; border-radius: 8px; overflow: hidden; }
 #indicators-table td, #indicators-table th { vertical-align: middle; padding: 0.6rem 0.75rem; }
 
 /* =========================
-   LOGIN SPECÍFICO (mejor integrado)
-   ========================= */
+    LOGIN SPECIFIC (better integrated)
+    ========================= */
 .login-card { max-width: 420px; margin: 60px auto; }
 .login-card .card-body { padding: 1.25rem; }
 .login-card .card-footer { background: transparent; border-top: none; color: #6b7280; font-size: 0.85rem; }
@@ -214,8 +214,8 @@ body {
 .login-container h2 { color: var(--secondary-color); font-weight: 700; margin-bottom: 1.5rem; }
 
 /* =========================
-   RESPONSIVE
-   ========================= */
+    RESPONSIVE DESIGN
+    ========================= */
 @media (max-width: 576px) {
     .login-container { margin: 40px 16px; }
     .navbar .navbar-brand { font-size: 0.95rem; }
@@ -223,7 +223,7 @@ body {
 }
 
 /* =========================
-   UTILS (pequeños ajustes)
-   ========================= */
+    UTILS (small adjustments)
+    ========================= */
 .text-muted { color: #6b7280 !important; }
 .small { font-size: 0.85rem; }

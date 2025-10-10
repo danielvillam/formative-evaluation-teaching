@@ -3,6 +3,41 @@ import { evaluationItems } from '../data.js';
 export function renderTeacherSection() {
     return `
     <div class="role-section" id="teacher-section">
+        <!-- Modal Plan de Mejora -->
+        <div class="modal fade" id="improvementPlanModal" tabindex="-1" aria-labelledby="improvementPlanModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="improvementPlanModalLabel">Crear Plan de Mejora Docente</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <form id="improvement-plan-form">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="plan-goal" class="form-label">Meta principal</label>
+                                <input type="text" class="form-control" id="plan-goal" name="goal" required placeholder="Ej: Mejorar la participación estudiantil en clase">
+                            </div>
+                            <div class="mb-3">
+                                <label for="plan-actions" class="form-label">Acciones a implementar</label>
+                                <textarea class="form-control" id="plan-actions" name="actions" rows="3" required placeholder="Describa las acciones concretas..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="plan-indicators" class="form-label">Indicadores de éxito</label>
+                                <input type="text" class="form-control" id="plan-indicators" name="indicators" required placeholder="Ej: Aumento del 20% en participación oral">
+                            </div>
+                            <div class="mb-3">
+                                <label for="plan-deadline" class="form-label">Fecha límite</label>
+                                <input type="date" class="form-control" id="plan-deadline" name="deadline" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-success">Guardar Plan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         <div class="row">
             <div class="col-md-4">
                 <div class="card dashboard-card">
@@ -100,14 +135,39 @@ export function renderTeacherSection() {
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container">
-                        <canvas id="results-chart"></canvas>
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <div class="chart-container">
+                                <canvas id="results-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <h5>Comparativo con evaluación estudiantil</h5>
+                            <div class="chart-container">
+                                <canvas id="comparison-chart"></canvas>
+                            </div>
+                        </div>
                     </div>
                     <div class="mt-4">
-                        <h5>Comparativo con evaluación estudiantil</h5>
-                        <div class="chart-container">
-                            <canvas id="comparison-chart"></canvas>
+                        <h5 class="mb-3">Tabla comparativa por pregunta</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered align-middle" id="results-comparison-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Pregunta</th>
+                                        <th>Autoevaluación</th>
+                                        <th>Promedio Estudiantil</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Se llenará dinámicamente -->
+                                </tbody>
+                            </table>
                         </div>
+                    </div>
+                    <div class="mt-4">
+                        <h5 class="mb-3">Resumen y oportunidades de mejora</h5>
+                        <div id="results-summary" class="alert alert-info" style="min-height:2.5em"></div>
                     </div>
                 </div>
             </div>
@@ -117,9 +177,10 @@ export function renderTeacherSection() {
 }
 
 /**
-* Renders assessment items as 5 radio buttons (1..5),
-* similar to student.js. Keeps name="eval-{id}" to group radio buttons.
-*/
+ * Render assessment items as 5 radio buttons (1-5),
+ * using the same style as the student evaluation (blue outline).
+ * Each group uses name="eval-{id}" for proper grouping.
+ */
 export function renderEvaluationItems() {
     const container = document.getElementById('evaluation-items');
     if (!container) return;
@@ -129,18 +190,16 @@ export function renderEvaluationItems() {
         const itemElement = document.createElement('div');
         itemElement.className = 'evaluation-item mb-3';
 
-        // "button" style radios from 1 to 5
+    // Render radio buttons (1-5) with blue outline, no required attribute
         let buttonsHTML = '';
         for (let i = 1; i <= 5; i++) {
-            const requiredAttr = i === 1 ? 'required' : '';
             buttonsHTML += `
                 <input type="radio"
                     class="btn-check"
                     name="eval-${item.id}"
                     id="eval-${item.id}-${i}"
                     value="${i}"
-                    data-id="${item.id}"
-                    ${requiredAttr}>
+                    data-id="${item.id}">
                 <label class="btn btn-outline-primary rounded-circle me-2" 
                     for="eval-${item.id}-${i}">
                     ${i}

@@ -1,3 +1,4 @@
+
 import { reportData } from '../data.js';
 
 export function renderDirectorSection() {
@@ -22,20 +23,40 @@ export function renderDirectorSection() {
                             <option value="faculty">Por Facultad</option>
                             <option value="individual">Individual (Docente)</option>
                             <option value="trends">Tendencias Temporales</option>
+                            <option value="cross">Cruce de Variables</option>
                         </select>
                     </div>
                     <div class="col-md-6">
                         <label for="time-period" class="form-label">Período de Tiempo:</label>
                         <select class="form-select" id="time-period">
-                            <option value="current">Actual (2023)</option>
-                            <option value="previous">Anterior (2022)</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                            <option value="2022">2022</option>
+                            <option value="2021">2021</option>
+                            <option value="2020">2020</option>
                             <option value="all">Todos los datos disponibles</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="chart-container">
-                    <canvas id="director-chart"></canvas>
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="chart-container mb-3">
+                            <canvas id="director-chart"></canvas>
+                        </div>
+                        <div class="chart-container mb-3">
+                            <canvas id="director-line-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="chart-container mb-3">
+                            <canvas id="director-radar-chart"></canvas>
+                        </div>
+                        <div class="chart-container mb-3">
+                            <canvas id="director-pie-chart"></canvas>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mt-4">
@@ -56,8 +77,23 @@ export function renderDirectorSection() {
                 </div>
 
                 <div class="mt-4">
+                    <h5>Cruce de Variables: Género vs. Promedio Evaluación</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Género</th>
+                                    <th>Promedio Evaluación</th>
+                                    <th>Número de Docentes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cross-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-4">
                     <button class="btn btn-primary" id="export-report">Exportar Reporte</button>
-                    <button class="btn btn-info" id="detailed-analysis">Análisis Detallado</button>
                 </div>
             </div>
         </div>
@@ -67,47 +103,135 @@ export function renderDirectorSection() {
 
 export function updateDirectorChartAndTable(ctx) {
     // safety checks
-    if (!ctx) return console.warn('updateDirectorChartAndTable: canvas context is null');
+    // Validate chart context and Chart.js availability
+    if (!ctx) {
+        if (typeof showToast === 'function') showToast('Chart context not found.', { type: 'danger' });
+        else console.warn('updateDirectorChartAndTable: canvas context is null');
+        return;
+    }
     if (typeof Chart === 'undefined') {
-        console.warn('Chart.js no está cargado. No se generará el gráfico.');
+        if (typeof showToast === 'function') showToast('Chart.js is not loaded. Chart will not be rendered.', { type: 'danger' });
+        else console.warn('Chart.js is not loaded. Chart will not be rendered.');
         return;
     }
 
     const reportType = document.getElementById('report-type')?.value || 'department';
     const timePeriod = document.getElementById('time-period')?.value || 'current';
-
     const data = reportData[reportType] || { labels: [], values: [] };
 
+    // --- Main Bar Chart ---
     try {
-        // destroy previous graph if it exists
         if (window.directorChart) window.directorChart.destroy();
-
         window.directorChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: data.labels,
-                datasets: [{ label: `Puntuación promedio (${timePeriod})`, data: data.values }]
+                datasets: [{ label: `Puntuación promedio (${timePeriod})`, data: data.values, backgroundColor: '#0d6efd' }]
             },
-            options: {
-                scales: { y: { beginAtZero: true, max: 5 } }
-            }
+            options: { scales: { y: { beginAtZero: true, max: 5 } } }
         });
     } catch (err) {
-        console.error('Error al dibujar el gráfico directorChart:', err);
+        if (typeof showToast === 'function') showToast('Error al dibujar el gráfico principal.', { type: 'danger' });
+        else console.error('Error al dibujar el gráfico directorChart:', err);
     }
 
-    // Update example table
+    // --- Temporal Line Chart ---
+    const lineCanvas = document.getElementById('director-line-chart');
+    if (lineCanvas) {
+        try {
+            if (window.directorLineChart) window.directorLineChart.destroy();
+            window.directorLineChart = new Chart(lineCanvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: ['2021', '2022', '2023'],
+                    datasets: [
+                        { label: 'Identidad profesional', data: [4.0, 4.2, 4.3], borderColor: '#0d6efd', fill: false },
+                        { label: 'Pedagogía', data: [3.9, 4.0, 4.1], borderColor: '#6610f2', fill: false },
+                        { label: 'Conocimiento disciplinar', data: [4.2, 4.4, 4.5], borderColor: '#ffc107', fill: false }
+                    ]
+                },
+                options: { scales: { y: { beginAtZero: true, max: 5 } } }
+            });
+        } catch (err) {
+            if (typeof showToast === 'function') showToast('Error al dibujar el gráfico de líneas.', { type: 'danger' });
+            else console.error('Error al dibujar directorLineChart:', err);
+        }
+    }
+
+    // --- Category Radar Chart ---
+    const radarCanvas = document.getElementById('director-radar-chart');
+    if (radarCanvas) {
+        try {
+            if (window.directorRadarChart) window.directorRadarChart.destroy();
+            window.directorRadarChart = new Chart(radarCanvas.getContext('2d'), {
+                type: 'radar',
+                data: {
+                    labels: ['Identidad', 'Pedagogía', 'Disciplina', 'Innovación', 'Gestión'],
+                    datasets: [
+                        { label: 'Departamento A', data: [4.2, 4.0, 4.3, 3.9, 4.1], backgroundColor: 'rgba(13,110,253,0.2)', borderColor: '#0d6efd' },
+                        { label: 'Departamento B', data: [4.0, 4.1, 4.2, 4.0, 4.0], backgroundColor: 'rgba(255,193,7,0.2)', borderColor: '#ffc107' }
+                    ]
+                },
+                options: { scales: { r: { beginAtZero: true, max: 5 } } }
+            });
+        } catch (err) {
+            if (typeof showToast === 'function') showToast('Error al dibujar el gráfico radar.', { type: 'danger' });
+            else console.error('Error al dibujar directorRadarChart:', err);
+        }
+    }
+
+    // --- Faculty Pie Chart ---
+    const pieCanvas = document.getElementById('director-pie-chart');
+    if (pieCanvas) {
+        try {
+            if (window.directorPieChart) window.directorPieChart.destroy();
+            window.directorPieChart = new Chart(pieCanvas.getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: ['Ciencias', 'Ingeniería', 'Humanidades', 'Salud'],
+                    datasets: [{
+                        data: [30, 25, 20, 25],
+                        backgroundColor: ['#0d6efd', '#6610f2', '#ffc107', '#20c997']
+                    }]
+                }
+            });
+        } catch (err) {
+            if (typeof showToast === 'function') showToast('Error al dibujar el gráfico de torta.', { type: 'danger' });
+            else console.error('Error al dibujar directorPieChart:', err);
+        }
+    }
+
+    // Update indicators summary table
     const tableBody = document.getElementById('indicators-table');
-    if (!tableBody) return;
-    tableBody.innerHTML = '';
-    const indicators = [
-        { name: "Identidad profesional", value: "4.3", trend: "↑", comparison: "+0.2" },
-        { name: "Pedagogía", value: "4.1", trend: "→", comparison: "+0.1" },
-        { name: "Conocimiento disciplinar", value: "4.5", trend: "↑", comparison: "+0.3" }
-    ];
-    indicators.forEach(ind => {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td>${ind.name}</td><td>${ind.value}</td><td>${ind.trend}</td><td>${ind.comparison}</td>`;
-        tableBody.appendChild(row);
-    });
+    if (tableBody) {
+        tableBody.innerHTML = '';
+        const indicators = [
+            { name: "Identidad profesional", value: "4.3", trend: "↑", comparison: "+0.2" },
+            { name: "Pedagogía", value: "4.1", trend: "→", comparison: "+0.1" },
+            { name: "Conocimiento disciplinar", value: "4.5", trend: "↑", comparison: "+0.3" },
+            { name: "Innovación", value: "4.0", trend: "→", comparison: "0.0" },
+            { name: "Gestión", value: "4.2", trend: "↑", comparison: "+0.2" }
+        ];
+        indicators.forEach(ind => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${ind.name}</td><td>${ind.value}</td><td>${ind.trend}</td><td>${ind.comparison}</td>`;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // Cross-tab: Gender vs. Evaluation Average
+    const crossTable = document.getElementById('cross-table');
+    if (crossTable) {
+        crossTable.innerHTML = '';
+        const crossData = [
+            { genero: 'Femenino', promedio: '4.3', cantidad: 18 },
+            { genero: 'Masculino', promedio: '4.1', cantidad: 22 },
+            { genero: 'Otro/No responde', promedio: '4.0', cantidad: 3 }
+        ];
+        crossData.forEach(rowData => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${rowData.genero}</td><td>${rowData.promedio}</td><td>${rowData.cantidad}</td>`;
+            crossTable.appendChild(row);
+        });
+    }
 }

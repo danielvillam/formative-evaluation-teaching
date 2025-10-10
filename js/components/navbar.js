@@ -1,4 +1,11 @@
 export function renderNavbar(user = null, role = null) {
+    // Role translation utility
+    let roleLabel = '';
+    if (role === 'student') roleLabel = 'Estudiante';
+    else if (role === 'teacher') roleLabel = 'Docente';
+    else if (role === 'director') roleLabel = 'Directivo';
+    else if (role) roleLabel = role;
+
     return `
     <nav class="navbar">
         <div class="container d-flex align-items-center justify-content-between">
@@ -11,7 +18,7 @@ export function renderNavbar(user = null, role = null) {
                         <i class="bi bi-person-circle fs-4 me-2"></i>
                         <div class="d-flex flex-column">
                             <span class="small">${user.email}</span>
-                            <span class="badge badge-role ${role}">${role}</span>
+                            <span class="badge badge-role ${role}">${roleLabel}</span>
                         </div>
                     </div>
                     <a class="nav-link text-danger fw-semibold" href="#" id="logout-btn">
