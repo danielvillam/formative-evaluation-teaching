@@ -23,11 +23,11 @@ export function renderStudentSection() {
 
                 <div id="student-evaluation-form" style="display: none;">
                     <div class="evaluation-scale mb-4">
-                        <div class="scale-item">1: Muy en desacuerdo</div>
+                        <div class="scale-item">1: Totalmente en desacuerdo</div>
                         <div class="scale-item">2: En desacuerdo</div>
-                        <div class="scale-item">3: Neutral</div>
+                        <div class="scale-item">3: Indiferente</div>
                         <div class="scale-item">4: De acuerdo</div>
-                        <div class="scale-item">5: Muy de acuerdo</div>
+                        <div class="scale-item">5: Totalmente de acuerdo</div>
                     </div>
 
                     <form id="student-eval-form">
@@ -44,6 +44,15 @@ export function renderStudentSection() {
     `;
 }
 
+export async function loadData() {
+    const response = await fetch('./data/data.json');
+    if (!response.ok) {
+        console.error("Error al cargar data.json");
+        return null;
+    }
+    return await response.json();
+}
+
 export function populateTeachers() {
     const select = document.getElementById('select-teacher');
     if (!select) return;
@@ -57,34 +66,42 @@ export function populateTeachers() {
     });
 }
 
-export function renderStudentEvaluationItems() {
+export async function renderStudentEvaluationItems() {
     const container = document.getElementById('student-evaluation-items');
     if (!container) return;
+
+    const data = await loadData();
+    if (!data || !data.Estudiantes) {
+        console.error("No se encontraron datos de Estudiantes en el JSON");
+        return;
+    }
+
     container.innerHTML = '';
 
-    studentEvaluationItems.forEach(item => {
+    data.Estudiantes.forEach((text, index) => {
+        const itemId = `student-${index + 1}`; // <--- más seguro que solo un número
         const itemElement = document.createElement('div');
         itemElement.className = 'evaluation-item mb-3';
 
-        // Render radio buttons (1-5) with the same style as teacher self-evaluation (blue outline)
+        // Botones 1 a 5
         let buttonsHTML = '';
         for (let i = 1; i <= 5; i++) {
             buttonsHTML += `
                 <input type="radio"
                     class="btn-check"
-                    name="eval-${item.id}"
-                    id="eval-${item.id}-${i}"
+                    name="eval-${itemId}"
+                    id="eval-${itemId}-${i}"
                     value="${i}"
-                    data-id="${item.id}">
+                    data-id="${itemId}">
                 <label class="btn btn-outline-primary rounded-circle me-2" 
-                    for="eval-${item.id}-${i}">
+                    for="eval-${itemId}-${i}">
                     ${i}
                 </label>
             `;
         }
 
         itemElement.innerHTML = `
-            <h6 class="mb-2">${item.text}</h6>
+            <h6 class="mb-2">${text}</h6>
             <div class="d-flex align-items-center">
                 ${buttonsHTML}
             </div>
@@ -93,3 +110,4 @@ export function renderStudentEvaluationItems() {
         container.appendChild(itemElement);
     });
 }
+

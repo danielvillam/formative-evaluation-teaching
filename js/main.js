@@ -278,30 +278,29 @@ function init() {
     // Visual and logical validation: only submit if all questions are answered
         let allAnswered = true;
     // Clear previous error messages
-        evaluationItems.forEach(item => {
-            const errorSpan = teacherEvalForm.querySelector(`#eval-error-${item.id}`);
-            if (errorSpan) errorSpan.remove();
-        });
+        teacherEvalForm.querySelectorAll('.eval-error-msg').forEach(e => e.remove());
+
     // Validate and show message below each unanswered question
-        evaluationItems.forEach(item => {
-            const checked = teacherEvalForm.querySelector(`input[name='eval-${item.id}']:checked`);
+        const questions = teacherEvalForm.querySelectorAll('.evaluation-item');
+
+        questions.forEach((itemDiv, index) => {
+            const radios = itemDiv.querySelectorAll('input[type="radio"]');
+            const name = radios[0]?.name;
+            const checked = studentForm.querySelector(`input[name="${name}"]:checked`);
+
             if (!checked) {
                 allAnswered = false;
-                // Find the container for the unanswered question
-                const itemDiv = teacherEvalForm.querySelector(`.evaluation-item input[name='eval-${item.id}']`)?.closest('.evaluation-item');
-                if (itemDiv && !itemDiv.querySelector(`#eval-error-${item.id}`)) {
-                    const error = document.createElement('span');
-                    error.id = `eval-error-${item.id}`;
-                    error.className = 'eval-error-msg';
-                    error.textContent = 'Por favor responde esta pregunta.';
-                    error.style.display = 'block';
-                    error.style.color = '#dc3545';
-                    error.style.fontSize = '0.95em';
-                    error.style.marginTop = '0.25rem';
-                    itemDiv.appendChild(error);
-                }
+                const error = document.createElement('span');
+                error.className = 'eval-error-msg';
+                error.textContent = 'Por favor responde esta pregunta.';
+                error.style.display = 'block';
+                error.style.color = '#dc3545';
+                error.style.fontSize = '0.95em';
+                error.style.marginTop = '0.25rem';
+                itemDiv.appendChild(error);
             }
         });
+
         if (!allAnswered) {
             showToast('Por favor, responda todas las preguntas antes de enviar la evaluación.', { type: 'warning' });
             return;
@@ -361,31 +360,30 @@ function init() {
     // Visual and logical validation: only submit if all questions are answered
         const items = window.studentEvaluationItems || studentEvaluationItems;
         let allAnswered = true;
-    // Clear previous error messages
-        items.forEach(item => {
-            const errorSpan = studentForm.querySelector(`#eval-error-${item.id}`);
-            if (errorSpan) errorSpan.remove();
-        });
-    // Validate and show message below each unanswered question
-        items.forEach(item => {
-            const checked = studentForm.querySelector(`input[name='eval-${item.id}']:checked`);
+
+    // Limpiar errores previos
+        studentForm.querySelectorAll('.eval-error-msg').forEach(e => e.remove());
+
+    // Recorrer todos los bloques de preguntas dinámicas
+        const questions = studentForm.querySelectorAll('.evaluation-item');
+        questions.forEach((itemDiv, index) => {
+            const radios = itemDiv.querySelectorAll('input[type="radio"]');
+            const name = radios[0]?.name;
+            const checked = studentForm.querySelector(`input[name="${name}"]:checked`);
+
             if (!checked) {
                 allAnswered = false;
-                // Find the container for the unanswered question
-                const itemDiv = studentForm.querySelector(`.evaluation-item input[name='eval-${item.id}']`)?.closest('.evaluation-item');
-                if (itemDiv && !itemDiv.querySelector(`#eval-error-${item.id}`)) {
-                    const error = document.createElement('span');
-                    error.id = `eval-error-${item.id}`;
-                    error.className = 'eval-error-msg';
-                    error.textContent = 'Por favor responde esta pregunta.';
-                    error.style.display = 'block';
-                    error.style.color = '#dc3545';
-                    error.style.fontSize = '0.95em';
-                    error.style.marginTop = '0.25rem';
-                    itemDiv.appendChild(error);
-                }
+                const error = document.createElement('span');
+                error.className = 'eval-error-msg';
+                error.textContent = 'Por favor responde esta pregunta.';
+                error.style.display = 'block';
+                error.style.color = '#dc3545';
+                error.style.fontSize = '0.95em';
+                error.style.marginTop = '0.25rem';
+                itemDiv.appendChild(error);
             }
-        });
+            });
+
         if (!allAnswered) {
             showToast('Por favor, responda todas las preguntas antes de enviar la evaluación.', { type: 'warning' });
             return;

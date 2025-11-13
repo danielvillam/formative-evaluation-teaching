@@ -100,15 +100,15 @@ export function renderTeacherSection() {
                 <div class="card-body">
                     <p>Evalúe su desempeño según la siguiente escala:</p>
                     <div class="evaluation-scale">
-                        <div class="scale-item">1: Nunca</div>
-                        <div class="scale-item">2: Rara vez</div>
-                        <div class="scale-item">3: Ocasionalmente</div>
-                        <div class="scale-item">4: Frecuentemente</div>
-                        <div class="scale-item">5: Siempre</div>
+                        <div class="scale-item">1: Totalmente en desacuerdo</div>
+                        <div class="scale-item">2: En desacuerdo</div>
+                        <div class="scale-item">3: Indiferente</div>
+                        <div class="scale-item">4: De acuerdo</div>
+                        <div class="scale-item">5: Totalmente de acuerdo</div>
                     </div>
 
                     <form id="teacher-eval-form">
-                        <div id="evaluation-items"></div>
+                        <div id="teacher-evaluation-items"></div>
 
                         <div class="mt-4">
                             <h5>Reflexión sobre la práctica docente</h5>
@@ -176,39 +176,56 @@ export function renderTeacherSection() {
     `;
 }
 
+export async function loadData() {
+    const response = await fetch('./data/data.json');
+    if (!response.ok) {
+        console.error("Error al cargar data.json");
+        return null;
+    }
+    return await response.json();
+}
+
 /**
  * Render assessment items as 5 radio buttons (1-5),
  * using the same style as the student evaluation (blue outline).
  * Each group uses name="eval-{id}" for proper grouping.
  */
-export function renderEvaluationItems() {
-    const container = document.getElementById('evaluation-items');
+export async function renderEvaluationItems() {
+    const container = document.getElementById('teacher-evaluation-items');
     if (!container) return;
+
+    const data = await loadData();
+        if (!data || !data.Docentes) {
+            console.error("No se encontraron datos de Docentes en el JSON");
+            return;
+        }
+    
     container.innerHTML = '';
 
-    evaluationItems.forEach(item => {
+    data.Estudiantes.forEach((text, index) => {
+        const itemId = index + 1; // genera un ID numérico
         const itemElement = document.createElement('div');
         itemElement.className = 'evaluation-item mb-3';
 
-    // Render radio buttons (1-5) with blue outline, no required attribute
+        // Botones 1 a 5
         let buttonsHTML = '';
         for (let i = 1; i <= 5; i++) {
             buttonsHTML += `
                 <input type="radio"
                     class="btn-check"
-                    name="eval-${item.id}"
-                    id="eval-${item.id}-${i}"
+                    name="eval-${itemId}"
+                    id="eval-${itemId}-${i}"
                     value="${i}"
-                    data-id="${item.id}">
+                    data-id="${itemId}">
                 <label class="btn btn-outline-primary rounded-circle me-2" 
-                    for="eval-${item.id}-${i}">
+                    for="eval-${itemId}-${i}">
                     ${i}
                 </label>
             `;
         }
 
         itemElement.innerHTML = `
-            <h6 class="mb-2">${item.text}</h6>
+            <h6 class="mb-2">${text}</h6>
             <div class="d-flex align-items-center">
                 ${buttonsHTML}
             </div>
