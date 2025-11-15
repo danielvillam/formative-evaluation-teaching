@@ -1,6 +1,3 @@
-
-import { reportData } from '../data.js';
-
 export function renderDirectorSection() {
     return `
     <div class="role-section" id="director-section">

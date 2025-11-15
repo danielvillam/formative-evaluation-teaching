@@ -24,7 +24,6 @@ import { renderLoginSection } from './components/login.js';
 import { renderTeacherSection, renderEvaluationItems } from './components/teacher.js';
 import { renderStudentSection, populateTeachers, renderStudentEvaluationItems } from './components/student.js';
 import { renderDirectorSection, updateDirectorChartAndTable } from './components/director.js';
-import { evaluationItems, studentEvaluationItems } from './data.js';
 
 let currentUser = null;
 let currentRole = null;
