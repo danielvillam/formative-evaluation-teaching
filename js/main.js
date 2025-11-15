@@ -491,7 +491,13 @@ function handleLogin(e) {
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
     document.getElementById('login-section').style.display = 'none';
-    document.getElementById('app-section').style.display = 'block';
+
+    const appSection = document.getElementById('app-section');
+    if (appSection) {
+        appSection.style.display = 'block';
+    } else {
+        console.error('El elemento con ID "app-section" no existe en el DOM.');
+    }
 
     // IMPORTANT: apply permissions so tabs/sections are shown for this role
     enforcePermissions();
