@@ -24,6 +24,7 @@ import { renderLoginSection } from './components/login.js';
 import { renderTeacherSection, renderEvaluationItems } from './components/teacher.js';
 import { renderStudentSection, populateTeachers, renderStudentEvaluationItems } from './components/student.js';
 import { renderDirectorSection, updateDirectorChartAndTable } from './components/director.js';
+import { ClerkProvider, RedirectToSignIn, SignedIn, SignedOut } from '@clerk/clerk-js';
 
 let currentUser = null;
 let currentRole = null;
@@ -35,22 +36,19 @@ navbarContainer.innerHTML = renderNavbar();
 const main = document.getElementById('main-container');
 
 // Render login and main app sections
-main.innerHTML = `
+const app = `
+<SignedIn>
     ${renderLoginSection()}
-    <div class="container mt-4" id="app-section" style="display: none;">
-        <div class="d-flex mb-4" id="role-tabs">
-            <div class="tab-button active" data-role="Docente">Docente</div>
-            <div class="tab-button" data-role="Estudiante">Estudiante</div>
-            <div class="tab-button" data-role="Directivo">Directivo</div>
-        </div>
-
-        <div id="sections-container">
-            ${renderTeacherSection()}
-            ${renderStudentSection()}
-            ${renderDirectorSection()}
-        </div>
-    </div>
+    ${renderTeacherSection()}
+    ${renderStudentSection()}
+    ${renderDirectorSection()}
+</SignedIn>
+<SignedOut>
+    <RedirectToSignIn />
+</SignedOut>
 `;
+
+main.innerHTML = app;
 
 // ---- Permissions and utility functions ----
 function hasRole(role) {
