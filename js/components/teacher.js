@@ -1,5 +1,3 @@
-import { evaluationItems } from '../data.js';
-
 export function renderTeacherSection() {
     return `
     <div class="role-section" id="teacher-section">

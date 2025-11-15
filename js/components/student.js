@@ -1,5 +1,3 @@
-import { studentEvaluationItems, teachers } from '../data.js';
-
 export function renderStudentSection() {
     return `
     <div class="role-section" id="student-section">
@@ -53,17 +51,24 @@ export async function loadData() {
     return await response.json();
 }
 
-export function populateTeachers() {
+export async function populateTeachers() {
     const select = document.getElementById('select-teacher');
     if (!select) return;
+
     // Clear previous options except for the placeholder
     select.innerHTML = '<option value="">-- Seleccione un docente --</option>';
-    teachers.forEach(teacher => {
-        const option = document.createElement('option');
-        option.value = teacher.id;
-        option.textContent = `${teacher.name} (${teacher.department})`;
-        select.appendChild(option);
-    });
+
+    try {
+        const teachers = await fetchTeachers(); // Fetch teachers dynamically
+        teachers.forEach(teacher => {
+            const option = document.createElement('option');
+            option.value = teacher.id;
+            option.textContent = `${teacher.name} (${teacher.department})`;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error al cargar los docentes:', error);
+    }
 }
 
 export async function renderStudentEvaluationItems() {
@@ -109,5 +114,37 @@ export async function renderStudentEvaluationItems() {
 
         container.appendChild(itemElement);
     });
+}
+
+export async function fetchTeachers() {
+    try {
+        const response = await fetch('/api/get-teachers');
+        if (!response.ok) {
+            throw new Error('Error al obtener los docentes');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error(error);
+        return [];
+    }
+}
+
+export async function submitStudentEvaluation(teacherId, evaluationData) {
+    try {
+        const response = await fetch('/api/submit-evaluation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ teacherId, evaluationData })
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al enviar la evaluación');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
 }
 
