@@ -132,6 +132,8 @@ function init() {
             // Render evaluation items every time the form is opened
             renderEvaluationItems();
             form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            console.error('El elemento con ID "self-evaluation-form" no existe en el DOM.');
         }
     });
 
