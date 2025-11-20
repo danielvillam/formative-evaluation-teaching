@@ -1,3 +1,5 @@
+import { getTeacherQuestions } from '../services/database.js';
+
 export function renderTeacherSection() {
     return `
     <div class="role-section" id="teacher-section">
@@ -175,12 +177,13 @@ export function renderTeacherSection() {
 }
 
 export async function loadData() {
-    const response = await fetch('./data/data.json');
-    if (!response.ok) {
-        console.error("Error al cargar data.json");
+    try {
+        const data = await getTeacherQuestions();
+        return data;
+    } catch (error) {
+        console.error("Error al cargar preguntas de la base de datos", error);
         return null;
     }
-    return await response.json();
 }
 
 /**
