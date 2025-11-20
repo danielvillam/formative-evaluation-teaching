@@ -62,7 +62,7 @@ export async function populateTeachers() {
 
     // Fetch teacher data from the database
     try {
-        const teachers = await getTeachers();
+        const teachers = await fetchTeachers();
         teachers.forEach(teacher => {
             const option = document.createElement('option');
             option.value = teacher.id;
