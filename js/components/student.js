@@ -1,3 +1,5 @@
+import { getStudentQuestions } from '../services/database.js';
+
 export function renderStudentSection() {
     return `
     <div class="role-section" id="student-section">
@@ -43,12 +45,13 @@ export function renderStudentSection() {
 }
 
 export async function loadData() {
-    const response = await fetch('./data/data.json');
-    if (!response.ok) {
-        console.error("Error al cargar data.json");
+    try {
+        const data = await getStudentQuestions();
+        return data;
+    } catch (error) {
+        console.error("Error al cargar preguntas de la base de datos", error);
         return null;
     }
-    return await response.json();
 }
 
 export async function populateTeachers() {
@@ -58,16 +61,17 @@ export async function populateTeachers() {
     // Clear previous options except for the placeholder
     select.innerHTML = '<option value="">-- Seleccione un docente --</option>';
 
+    // Fetch teacher data from the database
     try {
-        const teachers = await fetchTeachers(); // Fetch teachers dynamically
+        const teachers = await getTeachers();
         teachers.forEach(teacher => {
             const option = document.createElement('option');
             option.value = teacher.id;
-            option.textContent = `${teacher.name} (${teacher.department})`;
+            option.textContent = teacher.name;
             select.appendChild(option);
         });
     } catch (error) {
-        console.error('Error al cargar los docentes:', error);
+        console.error("Error al cargar docentes", error);
     }
 }
 
