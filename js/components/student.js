@@ -131,21 +131,25 @@ export async function fetchTeachers() {
     }
 }
 
-export async function submitStudentEvaluation(teacherId, evaluationData) {
+export async function submitStudentEvaluation(teacherId, evaluationData, userEmail) {
     try {
         const response = await fetch('/api/submit-evaluation', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ teacherId, evaluationData })
+            body: JSON.stringify({ teacherId, evaluationData, userEmail })
         });
 
         if (!response.ok) {
             throw new Error('Error al enviar la evaluación');
         }
 
-        return await response.json();
+        const result = await response.json();
+        alert('¡Evaluación enviada correctamente!');
+        window.location.href = '/'; // Redirige a la página de inicio
+        return result;
     } catch (error) {
         console.error(error);
+        alert('Hubo un error al enviar la evaluación. Por favor, inténtelo de nuevo.');
         return null;
     }
 }

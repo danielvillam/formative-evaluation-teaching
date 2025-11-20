@@ -5,9 +5,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Método no permitido' });
   }
 
-  const { teacherId, evaluationData } = req.body;
+  const { teacherId, evaluationData, userEmail } = req.body;
 
-  if (!teacherId || !evaluationData) {
+  if (!teacherId || !evaluationData || !userEmail) {
     return res.status(400).json({ message: 'Datos incompletos' });
   }
 
@@ -16,6 +16,7 @@ export default async function handler(req, res) {
     const result = await db.collection('evaluations').insertOne({
       teacherId,
       evaluationData,
+      userEmail,
       createdAt: new Date(),
     });
 

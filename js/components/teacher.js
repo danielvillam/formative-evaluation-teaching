@@ -233,3 +233,26 @@ export async function renderEvaluationItems() {
         container.appendChild(itemElement);
     });
 }
+
+export async function submitTeacherEvaluation(teacherId, evaluationData, userEmail) {
+    try {
+        const response = await fetch('/api/submit-evaluation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ teacherId, evaluationData, userEmail })
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al enviar la evaluación');
+        }
+
+        const result = await response.json();
+        alert('¡Evaluación enviada correctamente!');
+        window.location.href = '/'; // Redirige a la página de inicio
+        return result;
+    } catch (error) {
+        console.error(error);
+        alert('Hubo un error al enviar la evaluación. Por favor, inténtelo de nuevo.');
+        return null;
+    }
+}
