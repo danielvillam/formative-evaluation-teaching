@@ -1,4 +1,3 @@
-import { getTeacherQuestions } from '../services/database.js';
 
 export function renderTeacherSection() {
     return `
@@ -178,8 +177,8 @@ export function renderTeacherSection() {
 
 export async function loadData() {
     try {
-        const data = await getTeacherQuestions();
-        return data;
+        const data = await fetch('/api/getTeacherQuestions');
+        return await data.json();
     } catch (error) {
         console.error("Error al cargar preguntas de la base de datos", error);
         return null;

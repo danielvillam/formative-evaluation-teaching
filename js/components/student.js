@@ -1,4 +1,3 @@
-import { getStudentQuestions } from '../services/database.js';
 
 export function renderStudentSection() {
     return `
@@ -46,8 +45,8 @@ export function renderStudentSection() {
 
 export async function loadData() {
     try {
-        const data = await getStudentQuestions();
-        return data;
+        const data = await fetch('/api/getStudentQuestions');
+        return await data.json();
     } catch (error) {
         console.error("Error al cargar preguntas de la base de datos", error);
         return null;
@@ -88,7 +87,7 @@ export async function renderStudentEvaluationItems() {
     container.innerHTML = '';
 
     data.Estudiantes.forEach((text, index) => {
-        const itemId = `student-${index + 1}`; // <--- más seguro que solo un número
+        const itemId = `student-${index + 1}`;
         const itemElement = document.createElement('div');
         itemElement.className = 'evaluation-item mb-3';
 
