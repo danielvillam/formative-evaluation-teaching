@@ -1,4 +1,3 @@
-
 export function renderStudentSection() {
     return `
     <div class="role-section" id="student-section">
@@ -79,14 +78,14 @@ export async function renderStudentEvaluationItems() {
     if (!container) return;
 
     const data = await loadData();
-    if (!data || !data.Estudiantes) {
-        console.error("No se encontraron datos de Estudiantes en el JSON");
+    if (!data || !Array.isArray(data)) {
+        console.error("No se encontraron preguntas de estudiantes en el formato esperado");
         return;
     }
 
     container.innerHTML = '';
 
-    data.Estudiantes.forEach((text, index) => {
+    data.forEach((item, index) => {
         const itemId = `student-${index + 1}`;
         const itemElement = document.createElement('div');
         itemElement.className = 'evaluation-item mb-3';
@@ -109,7 +108,7 @@ export async function renderStudentEvaluationItems() {
         }
 
         itemElement.innerHTML = `
-            <h6 class="mb-2">${text}</h6>
+            <h6 class="mb-2">${item.question}</h6>
             <div class="d-flex align-items-center">
                 ${buttonsHTML}
             </div>
