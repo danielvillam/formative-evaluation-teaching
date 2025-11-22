@@ -37,16 +37,17 @@ const main = document.getElementById('main-container');
 
 // Render login and main app sections
 const app = `
-<SignedIn>
-    ${renderLoginSection()}
-    ${renderTeacherSection()}
-    ${renderStudentSection()}
-    ${renderDirectorSection()}
-</SignedIn>
-<SignedOut>
-    <RedirectToSignIn />
-</SignedOut>
-`;
+<div id="app-section">
+    <SignedIn>
+        ${renderLoginSection()}
+        ${renderTeacherSection()}
+        ${renderStudentSection()}
+        ${renderDirectorSection()}
+    </SignedIn>
+    <SignedOut>
+        <RedirectToSignIn />
+    </SignedOut>
+</div>`;
 
 main.innerHTML = app;
 

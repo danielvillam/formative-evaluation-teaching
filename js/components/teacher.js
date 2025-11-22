@@ -199,6 +199,9 @@ export async function renderEvaluationItems() {
         return;
     }
 
+    // Assign data to a global variable for later use
+    window.evaluationItems = data;
+
     container.innerHTML = '';
 
     data.forEach((item, index) => {
@@ -234,16 +237,22 @@ export async function renderEvaluationItems() {
     });
 }
 
-export async function submitTeacherEvaluation(teacherId, evaluationData, userEmail) {
+export async function submitTeacherEvaluation(teacherId, evaluationData, userEmail, userRole) {
+    if (!teacherId || !evaluationData || !userEmail || !userRole) {
+        alert('Por favor, complete todos los campos antes de enviar la evaluación.');
+        return null;
+    }
+
     try {
         const response = await fetch('/api/submit-evaluation', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ teacherId, evaluationData, userEmail })
+            body: JSON.stringify({ teacherId, evaluationData, userEmail, userRole })
         });
 
         if (!response.ok) {
-            throw new Error('Error al enviar la evaluación');
+            const errorDetails = await response.json();
+            throw new Error(`Error del servidor: ${errorDetails.message || 'Error desconocido'}`);
         }
 
         const result = await response.json();
@@ -251,7 +260,7 @@ export async function submitTeacherEvaluation(teacherId, evaluationData, userEma
         window.location.href = '/'; // Redirige a la página de inicio
         return result;
     } catch (error) {
-        console.error(error);
+        console.error('Error al enviar la evaluación:', error);
         alert('Hubo un error al enviar la evaluación. Por favor, inténtelo de nuevo.');
         return null;
     }
