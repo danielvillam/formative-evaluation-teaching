@@ -391,13 +391,20 @@ function init() {
 
     // If all questions are answered, process and clear form
         const scores = {};
-        items.forEach(item => {
-            const checked = studentForm.querySelector(`input[name='eval-${item.id}']:checked`);
-            scores[item.id] = checked ? parseInt(checked.value, 10) : null;
+        items.forEach((item, index) => {
+            const checked = studentForm.querySelector(`input[name='eval-student-${index + 1}']:checked`);
+            scores[index + 1] = checked ? parseInt(checked.value, 10) : null;
         });
+
         const teacherId = document.getElementById('select-teacher').value;
-        console.log('Evaluación estudiantil enviada:', { teacherId, scores });
-    showToast('¡Evaluación enviada con éxito! Su respuesta es anónima.', { type: 'success' });
+        const userEmail = currentUser?.email || 'anonimo';
+        const userRole = currentRole || 'student';
+
+        console.log('Evaluación estudiantil enviada:', { teacherId, scores, userEmail, userRole });
+
+        submitStudentEvaluation(teacherId, scores, userEmail, userRole);
+
+        showToast('¡Evaluación enviada con éxito! Su respuesta es anónima.', { type: 'success' });
         studentForm.reset();
         if (selectTeacher) selectTeacher.value = '';
         const formEl = document.getElementById('student-evaluation-form');
