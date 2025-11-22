@@ -5,9 +5,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Método no permitido' });
   }
 
-  const { teacherId, evaluationData, userEmail } = req.body;
+  const { teacherId, evaluationData, userEmail, userRole } = req.body;
 
-  if (!teacherId || !evaluationData || !userEmail) {
+  if (!teacherId || !evaluationData || !userEmail || !userRole) {
     return res.status(400).json({ message: 'Datos incompletos' });
   }
 

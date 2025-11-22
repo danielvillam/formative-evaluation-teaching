@@ -22,7 +22,7 @@ function showToast(message, options = {}) {
 import { renderNavbar } from './components/navbar.js';
 import { renderLoginSection } from './components/login.js';
 import { renderTeacherSection, renderEvaluationItems } from './components/teacher.js';
-import { renderStudentSection, populateTeachers, renderStudentEvaluationItems } from './components/student.js';
+import { renderStudentSection, populateTeachers, renderStudentEvaluationItems, submitStudentEvaluation } from './components/student.js';
 import { renderDirectorSection, updateDirectorChartAndTable } from './components/director.js';
 import { ClerkProvider, RedirectToSignIn, SignedIn, SignedOut } from '@clerk/clerk-js';
 
