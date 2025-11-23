@@ -427,9 +427,8 @@ function init() {
         }
     });
 
-    // Student evaluation section
-    const userEmail = currentUser?.primaryEmailAddress?.emailAddress || currentUser?.email;
-    populateTeachers(userEmail);
+    // Student evaluation section - setup event listener only
+    // Note: populateTeachers() is called from switchRole() when role is 'student'
     const selectTeacher = document.getElementById('select-teacher');
     if (selectTeacher) {
         selectTeacher.addEventListener('change', function() {
