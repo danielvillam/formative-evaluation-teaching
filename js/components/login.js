@@ -39,6 +39,7 @@ export function renderLoginSection() {
                 </div>
 
                 <div class="card-footer text-center small text-muted">
+                    <p class="mt-3">¿No tienes una cuenta? <button id="show-registration" class="btn btn-link">Regístrate aquí</button></p>
                     <div class="mb-1">
                         <strong>Ejemplo:</strong> Correo: prueba@unal.edu.co | Contraseña: 123
                     </div>
