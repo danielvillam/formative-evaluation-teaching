@@ -540,6 +540,59 @@ function init() {
     if (registrationForm) {
         registrationForm.addEventListener('submit', handleRegistration);
     }
+
+    // Add toggle buttons for login and registration
+    function renderLoginSection() {
+        return `
+        <div id="login-section">
+            <h2>Iniciar Sesión</h2>
+            <form id="login-form">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Correo Electrónico</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="role" class="form-label">Rol</label>
+                    <select class="form-select" id="role" required>
+                        <option value="student">Estudiante</option>
+                        <option value="teacher">Docente</option>
+                        <option value="director">Directivo</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+            </form>
+            <p class="mt-3">¿No tienes una cuenta? <button id="show-registration" class="btn btn-link">Regístrate aquí</button></p>
+        </div>`;
+    }
+
+    // Toggle between login and registration forms
+    function setupFormToggle() {
+        const loginSection = document.getElementById('login-section');
+        const registrationSection = document.getElementById('registration-section');
+        const showRegistrationBtn = document.getElementById('show-registration');
+        const showLoginBtn = document.getElementById('show-login');
+
+        if (showRegistrationBtn) {
+            showRegistrationBtn.addEventListener('click', () => {
+                loginSection.style.display = 'none';
+                registrationSection.style.display = 'block';
+            });
+        }
+
+        if (showLoginBtn) {
+            showLoginBtn.addEventListener('click', () => {
+                registrationSection.style.display = 'none';
+                loginSection.style.display = 'block';
+            });
+        }
+    }
+
+    // Call setupFormToggle after DOM content is loaded
+    window.addEventListener('DOMContentLoaded', () => {
+        init();
+        enforcePermissions();
+        setupFormToggle();
+    });
 }
 
 async function handleLogin(e) {
@@ -622,4 +675,5 @@ function handleLogout(e) {
 window.addEventListener('DOMContentLoaded', () => {
     init();
     enforcePermissions();
+    setupFormToggle();
 });
