@@ -790,8 +790,7 @@ async function handleLogin(e) {
                     teacher: 'Docente',
                     director: 'Directivo'
                 };
-                showToast(`Este usuario está registrado como ${roleNames[storedRole]}, no como ${roleNames[role]}.`, { type: 'danger' });
-                await clerkInstance.signOut();
+                showToast(`Este usuario está registrado como ${roleNames[storedRole]}, no como ${roleNames[role]}.`, { type: 'danger', delay: 5000 });
                 return;
             }
 
@@ -832,8 +831,24 @@ async function handleLogin(e) {
         }
     } catch (error) {
         console.error('Error al iniciar sesión:', error);
-        const errorMessage = error.errors?.[0]?.message || error.message || 'Credenciales inválidas';
-        showToast('Error: ' + errorMessage, { type: 'danger' });
+        
+        // Translate common Clerk error messages to Spanish
+        let errorMessage = error.errors?.[0]?.message || error.message || 'Credenciales inválidas';
+        
+        // Common error translations
+        if (errorMessage.includes('Password is incorrect')) {
+            errorMessage = 'Contraseña incorrecta. Intenta de nuevo o usa otro método.';
+        } else if (errorMessage.includes('Invalid email')) {
+            errorMessage = 'Correo electrónico inválido.';
+        } else if (errorMessage.includes('User not found') || errorMessage.includes("Couldn't find your account")) {
+            errorMessage = 'No se encontró una cuenta con este correo.';
+        } else if (errorMessage.includes('Too many requests')) {
+            errorMessage = 'Demasiados intentos. Por favor espera un momento.';
+        } else if (errorMessage.includes('Network')) {
+            errorMessage = 'Error de conexión. Verifica tu internet.';
+        }
+        
+        showToast('Error: ' + errorMessage, { type: 'danger', delay: 5000 });
         return;
     }
 
