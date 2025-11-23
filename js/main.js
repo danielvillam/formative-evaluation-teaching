@@ -29,16 +29,18 @@ import { Clerk } from '@clerk/clerk-js';
 let currentUser = null;
 let currentRole = null;
 let clerkInstance = null;
+let useDemoMode = true; // Use demo mode by default for easier testing
 
-// Initialize Clerk
+// Initialize Clerk (optional - only if you want to use real authentication)
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-if (clerkPubKey) {
+if (clerkPubKey && !useDemoMode) {
     clerkInstance = new Clerk(clerkPubKey);
     clerkInstance.load().catch(err => {
-        console.warn('Failed to load Clerk:', err);
+        console.warn('Failed to load Clerk, falling back to demo mode:', err);
+        useDemoMode = true;
     });
 } else {
-    console.warn('Clerk publishable key is missing. Authentication features will be limited.');
+    console.info('Using demo mode for authentication (localStorage-based)');
 }
 
 // Render the navigation bar
@@ -562,8 +564,9 @@ async function handleRegistration(e) {
         return;
     }
 
-    if (!clerkInstance) {
-        // Fallback: Store user in localStorage for demo
+    // Use demo mode (localStorage) for simplicity
+    if (useDemoMode || !clerkInstance) {
+        // Store user in localStorage for demo
         const users = JSON.parse(localStorage.getItem('demo_users') || '[]');
         const existingUser = users.find(u => u.email === email);
         
@@ -574,7 +577,7 @@ async function handleRegistration(e) {
         
         users.push({ email, password, role });
         localStorage.setItem('demo_users', JSON.stringify(users));
-        showToast('Usuario registrado con éxito (modo demo).', { type: 'success' });
+        showToast('✓ Usuario registrado con éxito', { type: 'success' });
         
         // Clear form
         document.getElementById('registration-form').reset();
@@ -674,24 +677,29 @@ function setupFormToggle() {
 
 async function handleLogin(e) {
     e.preventDefault();
-    const email = document.getElementById('email').value;
+    const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const role = document.getElementById('role').value;
 
-    if (!clerkInstance) {
-        // Fallback to demo mode with localStorage
-        console.warn('Clerk not available, using demo authentication');
-        
+    // Validation
+    if (!email || !password || !role) {
+        showToast('Por favor completa todos los campos.', { type: 'warning' });
+        return;
+    }
+
+    // Use demo mode (localStorage) for simplicity
+    if (useDemoMode || !clerkInstance) {
+        // Demo mode with localStorage
         const users = JSON.parse(localStorage.getItem('demo_users') || '[]');
         const user = users.find(u => u.email === email && u.password === password);
         
         if (!user) {
-            showToast('Credenciales incorrectas.', { type: 'danger' });
+            showToast('Credenciales incorrectas. Si no tienes cuenta, regístrate primero.', { type: 'danger' });
             return;
         }
         
         if (user.role !== role) {
-            showToast('Rol incorrecto para este usuario.', { type: 'danger' });
+            showToast(`Este usuario está registrado como ${user.role === 'student' ? 'Estudiante' : user.role === 'teacher' ? 'Docente' : 'Directivo'}, no como ${role === 'student' ? 'Estudiante' : role === 'teacher' ? 'Docente' : 'Directivo'}.`, { type: 'danger' });
             return;
         }
         
@@ -706,7 +714,7 @@ async function handleLogin(e) {
         document.getElementById('app-section').style.display = 'block';
         enforcePermissions();
         switchRole(role);
-        showToast('Sesión iniciada (modo demo).', { type: 'success' });
+        showToast('✓ Sesión iniciada correctamente', { type: 'success' });
         return;
     }
 
