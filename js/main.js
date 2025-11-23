@@ -128,8 +128,17 @@ function switchRole(role) {
 function init() {
     const loginForm = document.getElementById('login-form');
     if (loginForm) loginForm.addEventListener('submit', handleLogin);
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+    
+    // Use event delegation for logout button (since it's dynamically rendered)
+    const navbarContainer = document.getElementById('navbar-container');
+    if (navbarContainer) {
+        navbarContainer.addEventListener('click', (e) => {
+            if (e.target.closest('#logout-btn')) {
+                e.preventDefault();
+                handleLogout(e);
+            }
+        });
+    }
 
     // Tab click: attempts to switch, but switchRole blocks based on permissions
     document.querySelectorAll('.tab-button').forEach(tab => {
@@ -593,7 +602,6 @@ async function handleRegistration(e) {
             // Update navbar
             const navbarContainer = document.getElementById('navbar-container');
             navbarContainer.innerHTML = renderNavbar(currentUser, currentRole);
-            document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
             
             // Apply permissions and switch to role
             enforcePermissions();
@@ -758,7 +766,6 @@ async function handleLogin(e) {
         // Continue with login UI updates
         const navbarContainer = document.getElementById('navbar-container');
         navbarContainer.innerHTML = renderNavbar(currentUser, currentRole);
-        document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
         document.getElementById('login-section').style.display = 'none';
         document.getElementById('app-section').style.display = 'block';
         enforcePermissions();
@@ -789,7 +796,6 @@ async function handleLogin(e) {
         // Continue with login UI updates
         const navbarContainer = document.getElementById('navbar-container');
         navbarContainer.innerHTML = renderNavbar(currentUser, currentRole);
-        document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
         document.getElementById('login-section').style.display = 'none';
         document.getElementById('app-section').style.display = 'block';
         enforcePermissions();
@@ -882,9 +888,6 @@ async function handleLogin(e) {
     const navbarContainer = document.getElementById('navbar-container');
     navbarContainer.innerHTML = renderNavbar(currentUser, currentRole);
 
-    // Re-assign logout event after login
-    document.getElementById('logout-btn').addEventListener('click', handleLogout);
-
     document.getElementById('login-section').style.display = 'none';
 
     const appSection = document.getElementById('app-section');
@@ -899,6 +902,9 @@ async function handleLogin(e) {
 
     // Then switchRole to set active classes and do any role-specific initialization
     switchRole(role);
+    
+    // Show success message
+    showToast('✓ Sesión iniciada correctamente', { type: 'success' });
 }
 
 async function handleLogout(e) {
