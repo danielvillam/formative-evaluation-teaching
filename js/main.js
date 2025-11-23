@@ -619,20 +619,23 @@ async function handleRegistration(e) {
                     })
                 });
 
+                const data = await response.json();
+                
                 if (!response.ok) {
-                    throw new Error('Failed to save user role');
+                    console.error('Server error response:', data);
+                    throw new Error(data.error || data.message || 'Failed to save user role');
                 }
 
-                const data = await response.json();
                 console.log('Role saved to Clerk:', data);
                 
                 // Also store in localStorage as backup
                 localStorage.setItem(`user_role_${email}`, role);
             } catch (metadataError) {
                 console.error('Error saving role to Clerk:', metadataError);
+                console.error('Error details:', metadataError.message);
                 // Still store in localStorage as fallback
                 localStorage.setItem(`user_role_${email}`, role);
-                showToast('Rol guardado localmente (fallback)', { type: 'warning' });
+                showToast(`Rol guardado localmente. Error servidor: ${metadataError.message}`, { type: 'warning', delay: 5000 });
             }
             
             // User is already signed in after signup, so set the current user and role
@@ -862,8 +865,12 @@ async function handleLogin(e) {
                         })
                     });
                     
+                    const data = await response.json();
+                    
                     if (response.ok) {
-                        console.log('Role saved to Clerk during login');
+                        console.log('Role saved to Clerk during login:', data);
+                    } else {
+                        console.error('Failed to save role during login:', data);
                     }
                 } catch (metadataError) {
                     console.error('Could not save role to Clerk:', metadataError);
