@@ -605,16 +605,32 @@ async function handleRegistration(e) {
         localStorage.setItem(`user_role_${email}`, role);
 
         if (signUp.status === 'complete') {
-            // Registration completed successfully
-            showToast('✓ Usuario registrado con éxito en Clerk.', { type: 'success' });
+            // Registration completed successfully - Clerk creates a session automatically
+            showToast('✓ Usuario registrado con éxito. Iniciando sesión...', { type: 'success' });
             console.log('Usuario registrado exitosamente:', signUp);
+            
+            // User is already signed in after signup, so set the current user and role
+            currentUser = { email, name: email.split('@')[0] };
+            currentRole = role;
             
             // Clear form
             document.getElementById('registration-form').reset();
             
-            // Switch back to login form
+            // Hide registration and login sections, show app
             document.getElementById('registration-container').style.display = 'none';
-            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('app-section').style.display = 'block';
+            
+            // Update navbar
+            const navbarContainer = document.getElementById('navbar-container');
+            navbarContainer.innerHTML = renderNavbar(currentUser, currentRole);
+            document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
+            
+            // Apply permissions and switch to role
+            enforcePermissions();
+            switchRole(role);
+            
+            showToast('✓ Sesión iniciada automáticamente.', { type: 'success', delay: 2000 });
         } else if (signUp.status === 'missing_requirements') {
             // Additional steps required (like email verification)
             showToast('Registro iniciado. Por favor verifica tu correo electrónico.', { type: 'info' });
@@ -713,6 +729,28 @@ async function handleLogin(e) {
         return;
     }
 
+    // Check if there's already an active Clerk session
+    if (clerkInstance && clerkInstance.session) {
+        console.log('Ya existe una sesión activa en Clerk');
+        
+        // Get the stored role or use the selected one
+        const storedRole = localStorage.getItem(`user_role_${email}`);
+        
+        currentUser = { email, name: email.split('@')[0] };
+        currentRole = storedRole || role;
+        
+        // Continue with login UI updates
+        const navbarContainer = document.getElementById('navbar-container');
+        navbarContainer.innerHTML = renderNavbar(currentUser, currentRole);
+        document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('app-section').style.display = 'block';
+        enforcePermissions();
+        switchRole(currentRole);
+        showToast('✓ Sesión activa detectada', { type: 'success' });
+        return;
+    }
+
     // Check if using demo mode
     if (useDemoMode || !clerkInstance) {
         // Demo mode with localStorage
@@ -808,6 +846,16 @@ async function handleLogin(e) {
 
 function handleLogout(e) {
     e?.preventDefault();
+    
+    // Sign out from Clerk if using Clerk
+    if (clerkInstance && clerkInstance.session) {
+        clerkInstance.signOut().then(() => {
+            console.log('Signed out from Clerk');
+        }).catch(err => {
+            console.error('Error signing out from Clerk:', err);
+        });
+    }
+    
     currentUser = null;
     currentRole = null;
 
