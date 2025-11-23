@@ -139,9 +139,18 @@ export async function fetchTeachers() {
     try {
         const response = await fetch('/api/get-teachers');
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Error al obtener los docentes:', errorData);
-            throw new Error(errorData.message || 'Error al obtener los docentes');
+            // Try to parse JSON error, but handle if it's HTML
+            let errorMessage = 'Error al obtener los docentes';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+                // Response is not JSON (probably HTML error page)
+                const text = await response.text();
+                console.error('Server returned non-JSON response:', text.substring(0, 200));
+            }
+            console.error('Error al obtener los docentes:', errorMessage);
+            throw new Error(errorMessage);
         }
         return await response.json();
     } catch (error) {
