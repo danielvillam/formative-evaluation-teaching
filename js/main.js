@@ -541,50 +541,34 @@ function init() {
         registrationForm.addEventListener('submit', handleRegistration);
     }
 
-    // Add toggle buttons for login and registration
-    function renderLoginSection() {
-        return `
-        <div id="login-section">
-            <h2>Iniciar Sesión</h2>
-            <form id="login-form">
-                <div class="mb-3">
-                    <label for="email" class="form-label">Correo Electrónico</label>
-                    <input type="email" class="form-control" id="email" required>
-                </div>
-                <div class="mb-3">
-                    <label for="role" class="form-label">Rol</label>
-                    <select class="form-select" id="role" required>
-                        <option value="student">Estudiante</option>
-                        <option value="teacher">Docente</option>
-                        <option value="director">Directivo</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
-            </form>
-            <p class="mt-3">¿No tienes una cuenta? <button id="show-registration" class="btn btn-link">Regístrate aquí</button></p>
-        </div>`;
-    }
-
-    // Toggle between login and registration forms
+    // Ensure registration container is toggled correctly
     function setupFormToggle() {
         const loginSection = document.getElementById('login-section');
-        const registrationSection = document.getElementById('registration-section');
+        const registrationSection = document.getElementById('registration-container');
         const showRegistrationBtn = document.getElementById('show-registration');
-        const showLoginBtn = document.getElementById('show-login');
+        const showLoginBtn = document.createElement('button');
+
+        if (registrationSection) {
+            registrationSection.style.display = 'none'; // Ensure it starts hidden
+        }
 
         if (showRegistrationBtn) {
             showRegistrationBtn.addEventListener('click', () => {
-                loginSection.style.display = 'none';
-                registrationSection.style.display = 'block';
+                if (loginSection) loginSection.style.display = 'none';
+                if (registrationSection) registrationSection.style.display = 'block';
+
+                // Add a button to go back to login
+                showLoginBtn.id = 'show-login';
+                showLoginBtn.className = 'btn btn-link';
+                showLoginBtn.textContent = '¿Ya tienes una cuenta? Inicia sesión aquí';
+                registrationSection.appendChild(showLoginBtn);
             });
         }
 
-        if (showLoginBtn) {
-            showLoginBtn.addEventListener('click', () => {
-                registrationSection.style.display = 'none';
-                loginSection.style.display = 'block';
-            });
-        }
+        showLoginBtn.addEventListener('click', () => {
+            if (registrationSection) registrationSection.style.display = 'none';
+            if (loginSection) loginSection.style.display = 'block';
+        });
     }
 
     // Call setupFormToggle after DOM content is loaded
