@@ -690,6 +690,11 @@ function setupFormToggle() {
     if (showRegistrationBtn) {
         showRegistrationBtn.addEventListener('click', (e) => {
             e.preventDefault();
+            
+            // Clear login form
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) loginForm.reset();
+            
             if (loginSection) loginSection.style.display = 'none';
             if (registrationContainer) registrationContainer.style.display = 'block';
         });
@@ -700,6 +705,16 @@ function setupFormToggle() {
     if (showLoginBtn) {
         showLoginBtn.addEventListener('click', (e) => {
             e.preventDefault();
+            
+            // Clear registration form
+            if (registrationForm) registrationForm.reset();
+            
+            // Clear password match message
+            if (passwordMatchMessage) {
+                passwordMatchMessage.textContent = '';
+                passwordMatchMessage.className = 'form-text';
+            }
+            
             if (registrationContainer) registrationContainer.style.display = 'none';
             if (loginSection) loginSection.style.display = 'block';
         });
@@ -744,8 +759,19 @@ async function handleLogin(e) {
     if (clerkInstance && clerkInstance.session) {
         console.log('Ya existe una sesión activa en Clerk');
         
-        // Get the stored role or use the selected one
-        const storedRole = localStorage.getItem(`user_role_${email}`);
+        // Get the stored role
+        const storedRole = localStorage.getItem(`user_role_${email}`) || clerkInstance.user?.publicMetadata?.role;
+        
+        // Validate that the selected role matches the stored role
+        if (storedRole && storedRole !== role) {
+            const roleNames = {
+                student: 'Estudiante',
+                teacher: 'Docente',
+                director: 'Directivo'
+            };
+            showToast(`Este usuario está registrado como ${roleNames[storedRole]}, no como ${roleNames[role]}.`, { type: 'danger', delay: 5000 });
+            return;
+        }
         
         currentUser = { email, name: email.split('@')[0] };
         currentRole = storedRole || role;
@@ -791,6 +817,14 @@ async function handleLogin(e) {
                     director: 'Directivo'
                 };
                 showToast(`Este usuario está registrado como ${roleNames[storedRole]}, no como ${roleNames[role]}.`, { type: 'danger', delay: 5000 });
+                
+                // Sign out to prevent session from staying active
+                try {
+                    await clerkInstance.signOut();
+                } catch (signOutError) {
+                    console.error('Error signing out after role mismatch:', signOutError);
+                }
+                
                 return;
             }
 
