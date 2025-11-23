@@ -512,7 +512,17 @@ function renderRegistrationForm() {
                         </div>
                         <div class="mb-3">
                             <label for="reg-password" class="form-label">Contraseña</label>
-                            <input type="password" class="form-control" id="reg-password" placeholder="********" required>
+                            <input type="password" class="form-control" id="reg-password" placeholder="Mínimo 8 caracteres" minlength="8" required>
+                            <div class="form-text">
+                                <small>
+                                    <i class="bi bi-info-circle"></i> La contraseña debe tener:
+                                    <ul class="mb-0 mt-1" style="font-size: 0.85rem;">
+                                        <li>Al menos 8 caracteres</li>
+                                        <li>Combinación de letras y números</li>
+                                        <li>Caracteres especiales recomendados (@, #, !, etc.)</li>
+                                    </ul>
+                                </small>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="reg-role" class="form-label">Rol</label>
@@ -537,12 +547,18 @@ function renderRegistrationForm() {
 // Handle registration (moved outside init)
 async function handleRegistration(e) {
     e.preventDefault();
-    const email = document.getElementById('reg-email').value;
+    const email = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-password').value;
     const role = document.getElementById('reg-role').value;
 
-    if (!role) {
-        showToast('Por favor seleccione un rol.', { type: 'warning' });
+    // Validation
+    if (!email || !password || !role) {
+        showToast('Por favor completa todos los campos.', { type: 'warning' });
+        return;
+    }
+
+    if (password.length < 8) {
+        showToast('La contraseña debe tener al menos 8 caracteres.', { type: 'warning' });
         return;
     }
 
@@ -559,6 +575,9 @@ async function handleRegistration(e) {
         users.push({ email, password, role });
         localStorage.setItem('demo_users', JSON.stringify(users));
         showToast('Usuario registrado con éxito (modo demo).', { type: 'success' });
+        
+        // Clear form
+        document.getElementById('registration-form').reset();
         
         // Switch back to login form
         document.getElementById('registration-container').style.display = 'none';
@@ -579,16 +598,39 @@ async function handleRegistration(e) {
             showToast('Usuario registrado con éxito.', { type: 'success' });
             console.log('Usuario registrado:', signUp);
             
+            // Clear form
+            document.getElementById('registration-form').reset();
+            
             // Switch back to login form
             document.getElementById('registration-container').style.display = 'none';
             document.getElementById('login-section').style.display = 'block';
         } else if (signUp.status === 'missing_requirements') {
-            showToast('Por favor completa todos los campos requeridos.', { type: 'warning' });
+            showToast('Por favor completa todos los campos requeridos por el sistema de seguridad.', { type: 'warning' });
         }
     } catch (error) {
         console.error('Error al registrar usuario:', error);
-        const errorMessage = error.errors?.[0]?.message || error.message || 'Error desconocido';
-        showToast('Error al registrar usuario: ' + errorMessage, { type: 'danger' });
+        
+        // Parse Clerk error messages
+        let errorMessage = 'Error desconocido';
+        
+        if (error.errors && error.errors.length > 0) {
+            const clerkError = error.errors[0];
+            const message = clerkError.message || clerkError.longMessage || '';
+            
+            if (message.includes('Passwords must be 8 characters')) {
+                errorMessage = 'La contraseña debe tener al menos 8 caracteres.';
+            } else if (message.includes('found in an online data breach')) {
+                errorMessage = 'Esta contraseña es insegura. Por favor usa una contraseña más fuerte y única.';
+            } else if (message.includes('email address is taken')) {
+                errorMessage = 'Este correo ya está registrado.';
+            } else {
+                errorMessage = message;
+            }
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        showToast(errorMessage, { type: 'danger' });
     }
 }
 
