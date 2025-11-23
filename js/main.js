@@ -116,8 +116,12 @@ function switchRole(role) {
     document.getElementById('results-visualization')?.style && (document.getElementById('results-visualization').style.display = 'none');
 
     if (role === 'director') {
-        const ctx = document.getElementById('director-chart')?.getContext('2d');
-        if (ctx) updateDirectorChartAndTable(ctx);
+        try {
+            const ctx = document.getElementById('director-chart')?.getContext('2d');
+            if (ctx) updateDirectorChartAndTable(ctx);
+        } catch (error) {
+            console.error('Error initializing director charts:', error);
+        }
     }
 }
 
@@ -909,16 +913,26 @@ async function handleLogout(e) {
     // Hide all sections and forms on logout
     enforcePermissions();
     
+    // Save logout message to show after page reload
+    sessionStorage.setItem('logoutMessage', 'true');
+    
     // Scroll to login
     if (loginSection) {
         loginSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    
-    showToast('Sesión cerrada correctamente', { type: 'info' });
 }
 
 window.addEventListener('DOMContentLoaded', () => {
     init();
     enforcePermissions();
     setupFormToggle();
+    
+    // Check if there's a logout message to show
+    if (sessionStorage.getItem('logoutMessage')) {
+        sessionStorage.removeItem('logoutMessage');
+        // Small delay to ensure DOM is fully loaded
+        setTimeout(() => {
+            showToast('✓ Sesión cerrada correctamente', { type: 'info', delay: 3000 });
+        }, 100);
+    }
 });
