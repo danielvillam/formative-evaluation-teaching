@@ -24,10 +24,22 @@ import { renderLoginSection } from './components/login.js';
 import { renderTeacherSection, renderEvaluationItems } from './components/teacher.js';
 import { renderStudentSection, populateTeachers, renderStudentEvaluationItems, submitStudentEvaluation } from './components/student.js';
 import { renderDirectorSection, updateDirectorChartAndTable } from './components/director.js';
-import { ClerkProvider, RedirectToSignIn, SignedIn, SignedOut } from '@clerk/clerk-js';
+import { Clerk } from '@clerk/clerk-js';
 
 let currentUser = null;
 let currentRole = null;
+let clerkInstance = null;
+
+// Initialize Clerk
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+if (clerkPubKey) {
+    clerkInstance = new Clerk(clerkPubKey);
+    clerkInstance.load().catch(err => {
+        console.warn('Failed to load Clerk:', err);
+    });
+} else {
+    console.warn('Clerk publishable key is missing. Authentication features will be limited.');
+}
 
 // Render the navigation bar
 const navbarContainer = document.getElementById('navbar-container');
@@ -534,21 +546,49 @@ async function handleRegistration(e) {
         return;
     }
 
-    try {
-        const user = await Clerk.users.createUser({
-            emailAddress: email,
-            password: password,
-            publicMetadata: { role },
-        });
-        showToast('Usuario registrado con éxito.', { type: 'success' });
-        console.log('Usuario registrado:', user);
+    if (!clerkInstance) {
+        // Fallback: Store user in localStorage for demo
+        const users = JSON.parse(localStorage.getItem('demo_users') || '[]');
+        const existingUser = users.find(u => u.email === email);
+        
+        if (existingUser) {
+            showToast('Este correo ya está registrado.', { type: 'warning' });
+            return;
+        }
+        
+        users.push({ email, password, role });
+        localStorage.setItem('demo_users', JSON.stringify(users));
+        showToast('Usuario registrado con éxito (modo demo).', { type: 'success' });
         
         // Switch back to login form
         document.getElementById('registration-container').style.display = 'none';
         document.getElementById('login-section').style.display = 'block';
+        return;
+    }
+
+    try {
+        // Use Clerk's signUp method
+        const signUp = await clerkInstance.client.signUp.create({
+            emailAddress: email,
+            password: password,
+        });
+
+        if (signUp.status === 'complete' || signUp.createdUserId) {
+            // Store role in localStorage as fallback
+            localStorage.setItem(`user_role_${email}`, role);
+            showToast('Usuario registrado con éxito.', { type: 'success' });
+            console.log('Usuario registrado:', signUp);
+            
+            // Switch back to login form
+            document.getElementById('registration-container').style.display = 'none';
+            document.getElementById('login-section').style.display = 'block';
+        } else if (signUp.status === 'missing_requirements') {
+            showToast('Por favor completa todos los campos requeridos.', { type: 'warning' });
+        }
     } catch (error) {
         console.error('Error al registrar usuario:', error);
-        showToast('Error al registrar usuario. ' + (error.message || ''), { type: 'danger' });
+        const errorMessage = error.errors?.[0]?.message || error.message || 'Error desconocido';
+        showToast('Error al registrar usuario: ' + errorMessage, { type: 'danger' });
     }
 }
 
@@ -593,53 +633,101 @@ function setupFormToggle() {
 async function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
     const role = document.getElementById('role').value;
 
-    try {
-        // Validate user existence in Clerk
-        const users = await Clerk.users.getUserList();
-        const user = users.find(u => u.emailAddresses.some(e => e.emailAddress === email));
-
+    if (!clerkInstance) {
+        // Fallback to demo mode with localStorage
+        console.warn('Clerk not available, using demo authentication');
+        
+        const users = JSON.parse(localStorage.getItem('demo_users') || '[]');
+        const user = users.find(u => u.email === email && u.password === password);
+        
         if (!user) {
-            showToast('Usuario no registrado.', { type: 'danger' });
+            showToast('Credenciales incorrectas.', { type: 'danger' });
             return;
         }
-
-        // Check if the role matches the user's metadata
-        const userRole = user.publicMetadata.role;
-        if (userRole !== role) {
+        
+        if (user.role !== role) {
             showToast('Rol incorrecto para este usuario.', { type: 'danger' });
             return;
         }
-
+        
         currentUser = { email, name: email.split('@')[0] };
         currentRole = role;
-
-        // Re-render navbar after login
+        
+        // Continue with login UI updates
         const navbarContainer = document.getElementById('navbar-container');
         navbarContainer.innerHTML = renderNavbar(currentUser, currentRole);
-
-        // Re-assign logout event after login
-        document.getElementById('logout-btn').addEventListener('click', handleLogout);
-
+        document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
         document.getElementById('login-section').style.display = 'none';
-
-        const appSection = document.getElementById('app-section');
-        if (appSection) {
-            appSection.style.display = 'block';
-        } else {
-            console.error('El elemento con ID "app-section" no existe en el DOM.');
-        }
-
-        // IMPORTANT: apply permissions so tabs/sections are shown for this role
+        document.getElementById('app-section').style.display = 'block';
         enforcePermissions();
-
-        // Then switchRole to set active classes and do any role-specific initialization
         switchRole(role);
+        showToast('Sesión iniciada (modo demo).', { type: 'success' });
+        return;
+    }
+
+    try {
+        // Use Clerk's signIn method
+        const signIn = await clerkInstance.client.signIn.create({
+            identifier: email,
+            password: password,
+        });
+
+        if (signIn.status === 'complete') {
+            // Check role from localStorage
+            const storedRole = localStorage.getItem(`user_role_${email}`);
+            
+            if (storedRole && storedRole !== role) {
+                showToast('Rol incorrecto para este usuario.', { type: 'danger' });
+                await clerkInstance.signOut();
+                return;
+            }
+
+            currentUser = { email, name: email.split('@')[0] };
+            currentRole = role;
+            
+            // Store role if not already stored
+            if (!storedRole) {
+                localStorage.setItem(`user_role_${email}`, role);
+            }
+        } else {
+            showToast('Error al iniciar sesión. Por favor intenta de nuevo.', { type: 'danger' });
+            return;
+        }
     } catch (error) {
         console.error('Error al iniciar sesión:', error);
-        showToast('Error al validar el usuario.', { type: 'danger' });
+        const errorMessage = error.errors?.[0]?.message || error.message || 'Credenciales inválidas';
+        showToast('Error: ' + errorMessage, { type: 'danger' });
+        return;
     }
+
+    // Continue with login UI updates
+    currentUser = { email, name: email.split('@')[0] };
+    currentRole = role;
+
+    // Re-render navbar after login
+    const navbarContainer = document.getElementById('navbar-container');
+    navbarContainer.innerHTML = renderNavbar(currentUser, currentRole);
+
+    // Re-assign logout event after login
+    document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+    document.getElementById('login-section').style.display = 'none';
+
+    const appSection = document.getElementById('app-section');
+    if (appSection) {
+        appSection.style.display = 'block';
+    } else {
+        console.error('El elemento con ID "app-section" no existe en el DOM.');
+    }
+
+    // IMPORTANT: apply permissions so tabs/sections are shown for this role
+    enforcePermissions();
+
+    // Then switchRole to set active classes and do any role-specific initialization
+    switchRole(role);
 }
 
 function handleLogout(e) {
