@@ -29,18 +29,21 @@ import { Clerk } from '@clerk/clerk-js';
 let currentUser = null;
 let currentRole = null;
 let clerkInstance = null;
-let useDemoMode = true; // Use demo mode by default for easier testing
+let useDemoMode = false; // Set to false to use real Clerk authentication
 
-// Initialize Clerk (optional - only if you want to use real authentication)
+// Initialize Clerk
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 if (clerkPubKey && !useDemoMode) {
     clerkInstance = new Clerk(clerkPubKey);
-    clerkInstance.load().catch(err => {
-        console.warn('Failed to load Clerk, falling back to demo mode:', err);
+    clerkInstance.load().then(() => {
+        console.info('Clerk initialized successfully');
+    }).catch(err => {
+        console.error('Failed to load Clerk, falling back to demo mode:', err);
         useDemoMode = true;
     });
-} else {
-    console.info('Using demo mode for authentication (localStorage-based)');
+} else if (!clerkPubKey) {
+    console.warn('Clerk publishable key is missing. Falling back to demo mode.');
+    useDemoMode = true;
 }
 
 // Render the navigation bar
@@ -535,6 +538,7 @@ function renderRegistrationForm() {
                                 <option value="director">Directivo</option>
                             </select>
                         </div>
+                        <div id="clerk-captcha" class="mb-3"></div>
                         <button type="submit" class="btn btn-success w-100">Registrarse</button>
                     </form>
                 </div>
@@ -564,7 +568,7 @@ async function handleRegistration(e) {
         return;
     }
 
-    // Use demo mode (localStorage) for simplicity
+    // Check if using demo mode
     if (useDemoMode || !clerkInstance) {
         // Store user in localStorage for demo
         const users = JSON.parse(localStorage.getItem('demo_users') || '[]');
@@ -577,7 +581,7 @@ async function handleRegistration(e) {
         
         users.push({ email, password, role });
         localStorage.setItem('demo_users', JSON.stringify(users));
-        showToast('✓ Usuario registrado con éxito', { type: 'success' });
+        showToast('✓ Usuario registrado con éxito (modo demo)', { type: 'success' });
         
         // Clear form
         document.getElementById('registration-form').reset();
@@ -595,11 +599,15 @@ async function handleRegistration(e) {
             password: password,
         });
 
-        if (signUp.status === 'complete' || signUp.createdUserId) {
-            // Store role in localStorage as fallback
-            localStorage.setItem(`user_role_${email}`, role);
-            showToast('Usuario registrado con éxito.', { type: 'success' });
-            console.log('Usuario registrado:', signUp);
+        console.log('SignUp status:', signUp.status);
+
+        // Store role in localStorage (since we can't set publicMetadata client-side)
+        localStorage.setItem(`user_role_${email}`, role);
+
+        if (signUp.status === 'complete') {
+            // Registration completed successfully
+            showToast('✓ Usuario registrado con éxito en Clerk.', { type: 'success' });
+            console.log('Usuario registrado exitosamente:', signUp);
             
             // Clear form
             document.getElementById('registration-form').reset();
@@ -608,7 +616,25 @@ async function handleRegistration(e) {
             document.getElementById('registration-container').style.display = 'none';
             document.getElementById('login-section').style.display = 'block';
         } else if (signUp.status === 'missing_requirements') {
-            showToast('Por favor completa todos los campos requeridos por el sistema de seguridad.', { type: 'warning' });
+            // Additional steps required (like email verification)
+            showToast('Registro iniciado. Por favor verifica tu correo electrónico.', { type: 'info' });
+            console.log('Verification required:', signUp.missingFields);
+            
+            // You might want to show a verification code input here
+            // For now, we'll just inform the user
+            showToast('Se ha enviado un código de verificación a tu correo.', { type: 'info', delay: 5000 });
+        } else if (signUp.createdUserId) {
+            // User created but may need verification
+            showToast('✓ Usuario registrado. Revisa tu correo para verificar tu cuenta.', { type: 'success' });
+            
+            // Clear form
+            document.getElementById('registration-form').reset();
+            
+            // Switch back to login form
+            document.getElementById('registration-container').style.display = 'none';
+            document.getElementById('login-section').style.display = 'block';
+        } else {
+            showToast('Registro en proceso. Estado: ' + signUp.status, { type: 'info' });
         }
     } catch (error) {
         console.error('Error al registrar usuario:', error);
@@ -687,7 +713,7 @@ async function handleLogin(e) {
         return;
     }
 
-    // Use demo mode (localStorage) for simplicity
+    // Check if using demo mode
     if (useDemoMode || !clerkInstance) {
         // Demo mode with localStorage
         const users = JSON.parse(localStorage.getItem('demo_users') || '[]');
@@ -714,7 +740,7 @@ async function handleLogin(e) {
         document.getElementById('app-section').style.display = 'block';
         enforcePermissions();
         switchRole(role);
-        showToast('✓ Sesión iniciada correctamente', { type: 'success' });
+        showToast('✓ Sesión iniciada (modo demo)', { type: 'success' });
         return;
     }
 
