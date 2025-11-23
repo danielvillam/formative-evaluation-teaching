@@ -481,58 +481,87 @@ function init() {
         planForm.reset();
     });
 
-    // Add registration form rendering
-    function renderRegistrationForm() {
-        return `
-        <div id="registration-section">
-            <h2>Registro</h2>
-            <form id="registration-form">
-                <div class="mb-3">
-                    <label for="reg-email" class="form-label">Correo Electrónico</label>
-                    <input type="email" class="form-control" id="reg-email" required>
+}
+
+// Registration form rendering (moved outside init)
+function renderRegistrationForm() {
+    return `
+    <div id="registration-section" class="container mt-5">
+        <div class="login-card">
+            <div class="card">
+                <div class="card-header bg-success text-center">
+                    <h4 class="mb-0 w-100 text-center">Registro de Usuario</h4>
                 </div>
-                <div class="mb-3">
-                    <label for="reg-password" class="form-label">Contraseña</label>
-                    <input type="password" class="form-control" id="reg-password" required>
+                <div class="card-body">
+                    <form id="registration-form">
+                        <div class="mb-3">
+                            <label for="reg-email" class="form-label">Correo Electrónico</label>
+                            <input type="email" class="form-control" id="reg-email" placeholder="ejemplo@correo.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg-password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="reg-password" placeholder="********" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg-role" class="form-label">Rol</label>
+                            <select class="form-select" id="reg-role" required>
+                                <option value="">-- Seleccione un rol --</option>
+                                <option value="student">Estudiante</option>
+                                <option value="teacher">Docente</option>
+                                <option value="director">Directivo</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Registrarse</button>
+                    </form>
                 </div>
-                <div class="mb-3">
-                    <label for="reg-role" class="form-label">Rol</label>
-                    <select class="form-select" id="reg-role" required>
-                        <option value="student">Estudiante</option>
-                        <option value="teacher">Docente</option>
-                        <option value="director">Directivo</option>
-                    </select>
+                <div class="card-footer text-center">
+                    <button id="show-login" class="btn btn-link">¿Ya tienes una cuenta? Inicia sesión aquí</button>
                 </div>
-                <button type="submit" class="btn btn-primary">Registrarse</button>
-            </form>
-        </div>`;
+            </div>
+        </div>
+    </div>`;
+}
+
+// Handle registration (moved outside init)
+async function handleRegistration(e) {
+    e.preventDefault();
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-password').value;
+    const role = document.getElementById('reg-role').value;
+
+    if (!role) {
+        showToast('Por favor seleccione un rol.', { type: 'warning' });
+        return;
     }
 
-    // Add registration form to the DOM
+    try {
+        const user = await Clerk.users.createUser({
+            emailAddress: email,
+            password: password,
+            publicMetadata: { role },
+        });
+        showToast('Usuario registrado con éxito.', { type: 'success' });
+        console.log('Usuario registrado:', user);
+        
+        // Switch back to login form
+        document.getElementById('registration-container').style.display = 'none';
+        document.getElementById('login-section').style.display = 'block';
+    } catch (error) {
+        console.error('Error al registrar usuario:', error);
+        showToast('Error al registrar usuario. ' + (error.message || ''), { type: 'danger' });
+    }
+}
+
+// Setup form toggle between login and registration (moved outside init)
+function setupFormToggle() {
+    const loginSection = document.getElementById('login-section');
     const registrationContainer = document.getElementById('registration-container');
+    const showRegistrationBtn = document.getElementById('show-registration');
+
+    // Render registration form
     if (registrationContainer) {
         registrationContainer.innerHTML = renderRegistrationForm();
-    }
-
-    // Handle registration
-    async function handleRegistration(e) {
-        e.preventDefault();
-        const email = document.getElementById('reg-email').value;
-        const password = document.getElementById('reg-password').value;
-        const role = document.getElementById('reg-role').value;
-
-        try {
-            const user = await Clerk.users.createUser({
-                emailAddress: email,
-                password: password,
-                publicMetadata: { role },
-            });
-            showToast('Usuario registrado con éxito.', { type: 'success' });
-            console.log('Usuario registrado:', user);
-        } catch (error) {
-            console.error('Error al registrar usuario:', error);
-            showToast('Error al registrar usuario.', { type: 'danger' });
-        }
+        registrationContainer.style.display = 'none';
     }
 
     // Attach event listener to registration form
@@ -541,42 +570,24 @@ function init() {
         registrationForm.addEventListener('submit', handleRegistration);
     }
 
-    // Ensure registration container is toggled correctly
-    function setupFormToggle() {
-        const loginSection = document.getElementById('login-section');
-        const registrationSection = document.getElementById('registration-container');
-        const showRegistrationBtn = document.getElementById('show-registration');
-        const showLoginBtn = document.createElement('button');
-
-        if (registrationSection) {
-            registrationSection.style.display = 'none'; // Ensure it starts hidden
-        }
-
-        if (showRegistrationBtn) {
-            showRegistrationBtn.addEventListener('click', () => {
-                if (loginSection) loginSection.style.display = 'none';
-                if (registrationSection) registrationSection.style.display = 'block';
-
-                // Add a button to go back to login
-                showLoginBtn.id = 'show-login';
-                showLoginBtn.className = 'btn btn-link';
-                showLoginBtn.textContent = '¿Ya tienes una cuenta? Inicia sesión aquí';
-                registrationSection.appendChild(showLoginBtn);
-            });
-        }
-
-        showLoginBtn.addEventListener('click', () => {
-            if (registrationSection) registrationSection.style.display = 'none';
-            if (loginSection) loginSection.style.display = 'block';
+    // Show registration button click
+    if (showRegistrationBtn) {
+        showRegistrationBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (loginSection) loginSection.style.display = 'none';
+            if (registrationContainer) registrationContainer.style.display = 'block';
         });
     }
 
-    // Call setupFormToggle after DOM content is loaded
-    window.addEventListener('DOMContentLoaded', () => {
-        init();
-        enforcePermissions();
-        setupFormToggle();
-    });
+    // Show login button click
+    const showLoginBtn = document.getElementById('show-login');
+    if (showLoginBtn) {
+        showLoginBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (registrationContainer) registrationContainer.style.display = 'none';
+            if (loginSection) loginSection.style.display = 'block';
+        });
+    }
 }
 
 async function handleLogin(e) {
