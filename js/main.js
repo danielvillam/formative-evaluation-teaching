@@ -297,7 +297,7 @@ function init() {
         questions.forEach((itemDiv, index) => {
             const radios = itemDiv.querySelectorAll('input[type="radio"]');
             const name = radios[0]?.name;
-            const checked = studentForm.querySelector(`input[name="${name}"]:checked`);
+            const checked = teacherEvalForm.querySelector(`input[name="${name}"]:checked`);
 
             if (!checked) {
                 allAnswered = false;
