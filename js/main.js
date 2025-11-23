@@ -30,21 +30,18 @@ import { Clerk } from '@clerk/clerk-js';
 let currentUser = null;
 let currentRole = null;
 let clerkInstance = null;
-let useDemoMode = false; // Set to false to use real Clerk authentication
 
 // Initialize Clerk
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-if (clerkPubKey && !useDemoMode) {
+if (!clerkPubKey) {
+    console.error('VITE_CLERK_PUBLISHABLE_KEY is missing. Please configure it in .env file.');
+} else {
     clerkInstance = new Clerk(clerkPubKey);
     clerkInstance.load().then(() => {
         console.info('Clerk initialized successfully');
     }).catch(err => {
-        console.error('Failed to load Clerk, falling back to demo mode:', err);
-        useDemoMode = true;
+        console.error('Failed to load Clerk:', err);
     });
-} else if (!clerkPubKey) {
-    console.warn('Clerk publishable key is missing. Falling back to demo mode.');
-    useDemoMode = true;
 }
 
 // Render the navigation bar
@@ -517,27 +514,8 @@ async function handleRegistration(e) {
         return;
     }
 
-    // Check if using demo mode
-    if (useDemoMode || !clerkInstance) {
-        // Store user in localStorage for demo
-        const users = JSON.parse(localStorage.getItem('demo_users') || '[]');
-        const existingUser = users.find(u => u.email === email);
-        
-        if (existingUser) {
-            showToast('Este correo ya está registrado.', { type: 'warning' });
-            return;
-        }
-        
-        users.push({ email, password, role });
-        localStorage.setItem('demo_users', JSON.stringify(users));
-        showToast('✓ Usuario registrado con éxito (modo demo)', { type: 'success' });
-        
-        // Clear form
-        document.getElementById('registration-form').reset();
-        
-        // Switch back to login form
-        document.getElementById('registration-container').style.display = 'none';
-        document.getElementById('login-section').style.display = 'block';
+    if (!clerkInstance) {
+        showToast('Error: Sistema de autenticación no inicializado.', { type: 'danger' });
         return;
     }
 
@@ -753,6 +731,11 @@ async function handleLogin(e) {
         return;
     }
 
+    if (!clerkInstance) {
+        showToast('Error: Sistema de autenticación no inicializado.', { type: 'danger' });
+        return;
+    }
+
     // Check if there's already an active Clerk session
     if (clerkInstance && clerkInstance.session) {
         console.log('Ya existe una sesión activa en Clerk');
@@ -771,36 +754,6 @@ async function handleLogin(e) {
         enforcePermissions();
         switchRole(currentRole);
         showToast('✓ Sesión activa detectada', { type: 'success' });
-        return;
-    }
-
-    // Check if using demo mode
-    if (useDemoMode || !clerkInstance) {
-        // Demo mode with localStorage
-        const users = JSON.parse(localStorage.getItem('demo_users') || '[]');
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        if (!user) {
-            showToast('Credenciales incorrectas. Si no tienes cuenta, regístrate primero.', { type: 'danger' });
-            return;
-        }
-        
-        if (user.role !== role) {
-            showToast(`Este usuario está registrado como ${user.role === 'student' ? 'Estudiante' : user.role === 'teacher' ? 'Docente' : 'Directivo'}, no como ${role === 'student' ? 'Estudiante' : role === 'teacher' ? 'Docente' : 'Directivo'}.`, { type: 'danger' });
-            return;
-        }
-        
-        currentUser = { email, name: email.split('@')[0] };
-        currentRole = role;
-        
-        // Continue with login UI updates
-        const navbarContainer = document.getElementById('navbar-container');
-        navbarContainer.innerHTML = renderNavbar(currentUser, currentRole);
-        document.getElementById('login-section').style.display = 'none';
-        document.getElementById('app-section').style.display = 'block';
-        enforcePermissions();
-        switchRole(role);
-        showToast('✓ Sesión iniciada (modo demo)', { type: 'success' });
         return;
     }
 
@@ -904,6 +857,7 @@ async function handleLogin(e) {
     switchRole(role);
     
     // Show success message
+    console.log('Showing login success toast for role:', role);
     showToast('✓ Sesión iniciada correctamente', { type: 'success' });
 }
 
