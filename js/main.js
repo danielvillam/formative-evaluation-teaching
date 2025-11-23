@@ -117,7 +117,7 @@ function switchRole(role) {
 
     if (role === 'teacher') {
         // Check if teacher has already completed self-evaluation
-        const teacherId = currentUser?.id || currentUser?.email;
+        const teacherId = currentUser?.primaryEmailAddress?.emailAddress || currentUser?.email;
         if (teacherId) {
             updateSelfEvaluationButton(teacherId);
         }
@@ -404,8 +404,8 @@ function init() {
         });
         const reflection = document.getElementById('reflection').value;
         
-        const teacherId = currentUser?.id || 'teacher-id';
         const userEmail = currentUser?.primaryEmailAddress?.emailAddress || currentUser?.email || 'anonimo';
+        const teacherId = userEmail; // Use email as unique identifier
         const userRole = currentRole || 'teacher';
         
         console.log('Evaluación enviada:', { scores, reflection, teacherId, userEmail, userRole });
