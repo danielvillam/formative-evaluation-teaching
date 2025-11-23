@@ -21,6 +21,7 @@ function showToast(message, options = {}) {
 }
 import { renderNavbar } from './components/navbar.js';
 import { renderLoginSection } from './components/login.js';
+import { renderRegistrationForm } from './components/registration.js';
 import { renderTeacherSection, renderEvaluationItems } from './components/teacher.js';
 import { renderStudentSection, populateTeachers, renderStudentEvaluationItems, submitStudentEvaluation } from './components/student.js';
 import { renderDirectorSection, updateDirectorChartAndTable } from './components/director.js';
@@ -163,25 +164,8 @@ function init() {
         showToast('Autoevaluación cancelada.', { type: 'secondary', delay: 2000 });
     });
 
-    // Toggle show/hide password in login form
-    const pwToggle = document.getElementById('toggle-password');
-    if (pwToggle) {
-        pwToggle.addEventListener('click', () => {
-            const pwInput = document.getElementById('password');
-            const icon = document.getElementById('toggle-password-icon');
-            if (!pwInput) return;
-            const isPassword = pwInput.type === 'password';
-            pwInput.type = isPassword ? 'text' : 'password';
-            pwToggle.setAttribute('aria-pressed', String(isPassword));
-            pwToggle.setAttribute('aria-label', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
-            if (icon) {
-                icon.classList.toggle('bi-eye', !isPassword);
-                icon.classList.toggle('bi-eye-slash', isPassword);
-            }
-            // Keep focus on the password input
-            pwInput.focus();
-        });
-    }
+    // Setup password toggle for login
+    setupPasswordToggle('password', 'toggle-password', 'toggle-password-icon');
 
     // View results: hide self-assessment form and show results (render charts)
     const viewResultsBtn = document.getElementById('view-results');
@@ -500,66 +484,22 @@ function init() {
 
 }
 
-// Registration form rendering (moved outside init)
-function renderRegistrationForm() {
-    return `
-    <div id="registration-section" class="container mt-5">
-        <div class="login-card">
-            <div class="card">
-                <div class="card-header bg-success text-center">
-                    <h4 class="mb-0 w-100 text-center">Registro de Usuario</h4>
-                </div>
-                <div class="card-body">
-                    <form id="registration-form">
-                        <div class="mb-3">
-                            <label for="reg-email" class="form-label">Correo Electrónico</label>
-                            <input type="email" class="form-control" id="reg-email" placeholder="ejemplo@correo.com" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="reg-password" class="form-label">Contraseña</label>
-                            <input type="password" class="form-control" id="reg-password" placeholder="Mínimo 8 caracteres" minlength="8" required>
-                            <div class="form-text">
-                                <small>
-                                    <i class="bi bi-info-circle"></i> La contraseña debe tener:
-                                    <ul class="mb-0 mt-1" style="font-size: 0.85rem;">
-                                        <li>Al menos 8 caracteres</li>
-                                        <li>Combinación de letras y números</li>
-                                        <li>Caracteres especiales recomendados (@, #, !, etc.)</li>
-                                    </ul>
-                                </small>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="reg-role" class="form-label">Rol</label>
-                            <select class="form-select" id="reg-role" required>
-                                <option value="">-- Seleccione un rol --</option>
-                                <option value="student">Estudiante</option>
-                                <option value="teacher">Docente</option>
-                                <option value="director">Directivo</option>
-                            </select>
-                        </div>
-                        <div id="clerk-captcha" class="mb-3"></div>
-                        <button type="submit" class="btn btn-success w-100">Registrarse</button>
-                    </form>
-                </div>
-                <div class="card-footer text-center">
-                    <button id="show-login" class="btn btn-link">¿Ya tienes una cuenta? Inicia sesión aquí</button>
-                </div>
-            </div>
-        </div>
-    </div>`;
-}
-
 // Handle registration (moved outside init)
 async function handleRegistration(e) {
     e.preventDefault();
     const email = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-password').value;
+    const confirmPassword = document.getElementById('reg-confirm-password').value;
     const role = document.getElementById('reg-role').value;
 
     // Validation
-    if (!email || !password || !role) {
+    if (!email || !password || !confirmPassword || !role) {
         showToast('Por favor completa todos los campos.', { type: 'warning' });
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showToast('Las contraseñas no coinciden.', { type: 'warning' });
         return;
     }
 
@@ -726,6 +666,36 @@ function setupFormToggle() {
         registrationForm.addEventListener('submit', handleRegistration);
     }
 
+    // Setup password toggle for registration
+    setupPasswordToggle('reg-password', 'toggle-reg-password', 'toggle-reg-password-icon');
+    setupPasswordToggle('reg-confirm-password', 'toggle-reg-confirm-password', 'toggle-reg-confirm-password-icon');
+
+    // Setup password match validation
+    const regPassword = document.getElementById('reg-password');
+    const regConfirmPassword = document.getElementById('reg-confirm-password');
+    const passwordMatchMessage = document.getElementById('password-match-message');
+
+    if (regPassword && regConfirmPassword && passwordMatchMessage) {
+        const validatePasswordMatch = () => {
+            if (regConfirmPassword.value === '') {
+                passwordMatchMessage.textContent = '';
+                passwordMatchMessage.className = 'form-text';
+                return;
+            }
+
+            if (regPassword.value === regConfirmPassword.value) {
+                passwordMatchMessage.textContent = '✓ Las contraseñas coinciden';
+                passwordMatchMessage.className = 'form-text text-success';
+            } else {
+                passwordMatchMessage.textContent = '✗ Las contraseñas no coinciden';
+                passwordMatchMessage.className = 'form-text text-danger';
+            }
+        };
+
+        regPassword.addEventListener('input', validatePasswordMatch);
+        regConfirmPassword.addEventListener('input', validatePasswordMatch);
+    }
+
     // Show registration button click
     if (showRegistrationBtn) {
         showRegistrationBtn.addEventListener('click', (e) => {
@@ -742,6 +712,23 @@ function setupFormToggle() {
             e.preventDefault();
             if (registrationContainer) registrationContainer.style.display = 'none';
             if (loginSection) loginSection.style.display = 'block';
+        });
+    }
+}
+
+// Helper function to setup password toggle
+function setupPasswordToggle(inputId, buttonId, iconId) {
+    const passwordInput = document.getElementById(inputId);
+    const toggleButton = document.getElementById(buttonId);
+    const toggleIcon = document.getElementById(iconId);
+
+    if (passwordInput && toggleButton && toggleIcon) {
+        toggleButton.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            toggleIcon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+            toggleButton.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
+            toggleButton.setAttribute('aria-label', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
         });
     }
 }
@@ -914,39 +901,60 @@ async function handleLogin(e) {
     switchRole(role);
 }
 
-function handleLogout(e) {
+async function handleLogout(e) {
     e?.preventDefault();
+    
+    console.log('Logout initiated');
     
     // Sign out from Clerk if using Clerk
     if (clerkInstance && clerkInstance.session) {
-        clerkInstance.signOut().then(() => {
-            console.log('Signed out from Clerk');
-        }).catch(err => {
+        try {
+            await clerkInstance.signOut();
+            console.log('Signed out from Clerk successfully');
+        } catch (err) {
             console.error('Error signing out from Clerk:', err);
-        });
+        }
     }
     
     currentUser = null;
     currentRole = null;
 
+    // Re-render navbar without user
     const navbarContainer = document.getElementById('navbar-container');
     navbarContainer.innerHTML = renderNavbar();
 
-    document.getElementById('login-section').style.display = 'block';
-    document.getElementById('app-section').style.display = 'none';
-    document.getElementById('login-form').reset();
+    // Show login section and hide app section
+    const loginSection = document.getElementById('login-section');
+    const appSection = document.getElementById('app-section');
+    const registrationContainer = document.getElementById('registration-container');
+    
+    if (loginSection) {
+        loginSection.style.display = 'block';
+    }
+    
+    if (appSection) {
+        appSection.style.display = 'none';
+    }
+    
+    if (registrationContainer) {
+        registrationContainer.style.display = 'none';
+    }
 
-    // Ensure the login section is fully rendered and visible
-    const loginContainer = document.getElementById('login-section');
-    if (loginContainer) {
-        loginContainer.style.display = 'block';
-        loginContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-        console.error('El formulario de inicio de sesión no se pudo renderizar.');
+    // Reset login form
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.reset();
     }
 
     // Hide all sections and forms on logout
     enforcePermissions();
+    
+    // Scroll to login
+    if (loginSection) {
+        loginSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    
+    showToast('Sesión cerrada correctamente', { type: 'info' });
 }
 
 window.addEventListener('DOMContentLoaded', () => {
