@@ -141,14 +141,25 @@ export async function fetchTeachers() {
         if (!response.ok) {
             // Try to parse JSON error, but handle if it's HTML
             let errorMessage = 'Error al obtener los docentes';
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorMessage;
-            } catch (e) {
+            const contentType = response.headers.get('content-type');
+            
+            if (contentType && contentType.includes('application/json')) {
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage;
+                } catch (e) {
+                    console.error('Error parsing JSON response:', e);
+                }
+            } else {
                 // Response is not JSON (probably HTML error page)
-                const text = await response.text();
-                console.error('Server returned non-JSON response:', text.substring(0, 200));
+                try {
+                    const text = await response.text();
+                    console.error('Server returned non-JSON response (status ' + response.status + '):', text.substring(0, 200));
+                } catch (e) {
+                    console.error('Error reading response text:', e);
+                }
             }
+            
             console.error('Error al obtener los docentes:', errorMessage);
             throw new Error(errorMessage);
         }
