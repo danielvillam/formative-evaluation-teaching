@@ -8,9 +8,11 @@ export default async function handler(req, res) {
   try {
     const db = await connectToDatabase();
     const teachers = await db.collection('teachers').find({}).toArray();
+    console.log(`Found ${teachers.length} teachers in database`);
     res.status(200).json(teachers);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al obtener los docentes' });
+    console.error('Error in get-teachers endpoint:', error.message);
+    console.error('Full error:', error);
+    res.status(500).json({ message: 'Error al obtener los docentes', error: error.message });
   }
 }

@@ -62,14 +62,28 @@ export async function populateTeachers() {
     // Fetch teacher data from the database
     try {
         const teachers = await fetchTeachers();
-        teachers.forEach(teacher => {
+        if (teachers && teachers.length > 0) {
+            teachers.forEach(teacher => {
+                const option = document.createElement('option');
+                option.value = teacher._id || teacher.id;
+                option.textContent = teacher.name + (teacher.subject ? ` - ${teacher.subject}` : '');
+                select.appendChild(option);
+            });
+        } else {
+            console.warn('No se encontraron docentes en la base de datos');
             const option = document.createElement('option');
-            option.value = teacher.id;
-            option.textContent = teacher.name;
+            option.value = '';
+            option.textContent = 'No hay docentes disponibles';
+            option.disabled = true;
             select.appendChild(option);
-        });
+        }
     } catch (error) {
-        console.error("Error al cargar docentes", error);
+        console.error('Error al cargar docentes:', error);
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Error al cargar docentes';
+        option.disabled = true;
+        select.appendChild(option);
     }
 }
 
@@ -125,12 +139,14 @@ export async function fetchTeachers() {
     try {
         const response = await fetch('/api/get-teachers');
         if (!response.ok) {
-            throw new Error('Error al obtener los docentes');
+            const errorData = await response.json();
+            console.error('Error al obtener los docentes:', errorData);
+            throw new Error(errorData.message || 'Error al obtener los docentes');
         }
         return await response.json();
     } catch (error) {
-        console.error(error);
-        return [];
+        console.error('Error en fetchTeachers:', error);
+        throw error;
     }
 }
 
