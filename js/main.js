@@ -22,7 +22,7 @@ function showToast(message, options = {}) {
 import { renderNavbar } from './components/navbar.js';
 import { renderLoginSection } from './components/login.js';
 import { renderRegistrationForm } from './components/registration.js';
-import { renderTeacherSection, renderEvaluationItems } from './components/teacher.js';
+import { renderTeacherSection, renderEvaluationItems, submitTeacherEvaluation } from './components/teacher.js';
 import { renderStudentSection, populateTeachers, renderStudentEvaluationItems, submitStudentEvaluation } from './components/student.js';
 import { renderDirectorSection, updateDirectorChartAndTable } from './components/director.js';
 import { Clerk } from '@clerk/clerk-js';
@@ -282,7 +282,7 @@ function init() {
 
     // Handle teacher self-assessment form submission
     const teacherEvalForm = document.getElementById('teacher-eval-form');
-    if (teacherEvalForm) teacherEvalForm.addEventListener('submit', (e) => {
+    if (teacherEvalForm) teacherEvalForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!hasRole('teacher') && !hasRole('director')) return showToast('No tienes permiso para enviar esta evaluación.', { type: 'danger' });
 
@@ -324,23 +324,36 @@ function init() {
             scores[item.id] = checked ? parseInt(checked.value, 10) : null;
         });
         const reflection = document.getElementById('reflection').value;
-        console.log('Evaluación enviada:', { scores, reflection });
-    showToast('¡Evaluación enviada con éxito!', { type: 'success' });
+        
+        const teacherId = currentUser?.id || 'teacher-id';
+        const userEmail = currentUser?.primaryEmailAddress?.emailAddress || currentUser?.email || 'anonimo';
+        const userRole = currentRole || 'teacher';
+        
+        console.log('Evaluación enviada:', { scores, reflection, teacherId, userEmail, userRole });
+        
+        // Submit to MongoDB
+        try {
+            await submitTeacherEvaluation(teacherId, { scores, reflection }, userEmail, userRole);
+            showToast('¡Evaluación enviada con éxito!', { type: 'success' });
+            
+            // Hide and clear views
+            const formEl = document.getElementById('self-evaluation-form');
+            if (formEl) formEl.style.display = 'none';
+            const resultsVis = document.getElementById('results-visualization');
+            if (resultsVis) resultsVis.style.display = 'none';
 
-    // Hide and clear views
-        const formEl = document.getElementById('self-evaluation-form');
-        if (formEl) formEl.style.display = 'none';
-        const resultsVis = document.getElementById('results-visualization');
-        if (resultsVis) resultsVis.style.display = 'none';
-
-    // Reset radio buttons (optional)
-        evaluationItems.forEach(item => {
-            const radios = document.getElementsByName(`eval-${item.id}`);
-            radios.forEach(r => r.checked = false);
-        });
-    // Clear textarea
-        const reflectionInput = document.getElementById('reflection');
-        if (reflectionInput) reflectionInput.value = '';
+            // Reset radio buttons (optional)
+            evaluationItems.forEach(item => {
+                const radios = document.getElementsByName(`eval-${item.id}`);
+                radios.forEach(r => r.checked = false);
+            });
+            // Clear textarea
+            const reflectionInput = document.getElementById('reflection');
+            if (reflectionInput) reflectionInput.value = '';
+        } catch (error) {
+            console.error('Error al enviar evaluación:', error);
+            showToast('Error al enviar la evaluación. Por favor, intente nuevamente.', { type: 'danger' });
+        }
     });
 
     // Student evaluation section
