@@ -601,13 +601,39 @@ async function handleRegistration(e) {
 
         console.log('SignUp status:', signUp.status);
 
-        // Store role in localStorage (since we can't set publicMetadata client-side)
-        localStorage.setItem(`user_role_${email}`, role);
-
         if (signUp.status === 'complete') {
             // Registration completed successfully - Clerk creates a session automatically
-            showToast('✓ Usuario registrado con éxito. Iniciando sesión...', { type: 'success' });
+            showToast('✓ Usuario registrado con éxito. Guardando rol...', { type: 'success' });
             console.log('Usuario registrado exitosamente:', signUp);
+            
+            // Save role to Clerk metadata via backend
+            try {
+                const response = await fetch('/api/update-user-metadata', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: signUp.createdUserId,
+                        role: role
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save user role');
+                }
+
+                const data = await response.json();
+                console.log('Role saved to Clerk:', data);
+                
+                // Also store in localStorage as backup
+                localStorage.setItem(`user_role_${email}`, role);
+            } catch (metadataError) {
+                console.error('Error saving role to Clerk:', metadataError);
+                // Still store in localStorage as fallback
+                localStorage.setItem(`user_role_${email}`, role);
+                showToast('Rol guardado localmente (fallback)', { type: 'warning' });
+            }
             
             // User is already signed in after signup, so set the current user and role
             currentUser = { email, name: email.split('@')[0] };
@@ -790,21 +816,58 @@ async function handleLogin(e) {
         });
 
         if (signIn.status === 'complete') {
-            // Check role from localStorage
-            const storedRole = localStorage.getItem(`user_role_${email}`);
+            // Get the current session to access user data
+            await clerkInstance.setActive({ session: signIn.createdSessionId });
             
+            // Get user from Clerk
+            const clerkUser = clerkInstance.user;
+            
+            // Try to get role from Clerk metadata first
+            let storedRole = clerkUser?.publicMetadata?.role;
+            
+            // Fallback to localStorage if not in Clerk
+            if (!storedRole) {
+                storedRole = localStorage.getItem(`user_role_${email}`);
+            }
+            
+            // If role is stored and doesn't match selected role, show error
             if (storedRole && storedRole !== role) {
-                showToast('Rol incorrecto para este usuario.', { type: 'danger' });
+                const roleNames = {
+                    student: 'Estudiante',
+                    teacher: 'Docente',
+                    director: 'Directivo'
+                };
+                showToast(`Este usuario está registrado como ${roleNames[storedRole]}, no como ${roleNames[role]}.`, { type: 'danger' });
                 await clerkInstance.signOut();
                 return;
             }
 
             currentUser = { email, name: email.split('@')[0] };
-            currentRole = role;
+            currentRole = storedRole || role;
             
-            // Store role if not already stored
+            // If role wasn't stored, save it now
             if (!storedRole) {
                 localStorage.setItem(`user_role_${email}`, role);
+                
+                // Try to update Clerk metadata
+                try {
+                    const response = await fetch('/api/update-user-metadata', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            userId: clerkUser.id,
+                            role: role
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        console.log('Role saved to Clerk during login');
+                    }
+                } catch (metadataError) {
+                    console.error('Could not save role to Clerk:', metadataError);
+                }
             }
         } else {
             showToast('Error al iniciar sesión. Por favor intenta de nuevo.', { type: 'danger' });
