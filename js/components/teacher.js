@@ -205,7 +205,7 @@ export async function renderEvaluationItems() {
     container.innerHTML = '';
 
     data.forEach((item, index) => {
-        const itemId = `teacher-${index + 1}`;
+        const itemId = item.id || (index + 1);
         const itemElement = document.createElement('div');
         itemElement.className = 'evaluation-item mb-3';
 
