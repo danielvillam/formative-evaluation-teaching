@@ -115,6 +115,14 @@ function switchRole(role) {
     document.getElementById('self-evaluation-form')?.style && (document.getElementById('self-evaluation-form').style.display = 'none');
     document.getElementById('results-visualization')?.style && (document.getElementById('results-visualization').style.display = 'none');
 
+    if (role === 'student') {
+        // Load teachers with evaluated status for current student
+        const userEmail = currentUser?.primaryEmailAddress?.emailAddress || currentUser?.email;
+        if (userEmail) {
+            populateTeachers(userEmail);
+        }
+    }
+
     if (role === 'director') {
         try {
             const ctx = document.getElementById('director-chart')?.getContext('2d');
@@ -357,7 +365,8 @@ function init() {
     });
 
     // Student evaluation section
-    populateTeachers();
+    const userEmail = currentUser?.primaryEmailAddress?.emailAddress || currentUser?.email;
+    populateTeachers(userEmail);
     const selectTeacher = document.getElementById('select-teacher');
     if (selectTeacher) {
         selectTeacher.addEventListener('change', function() {
@@ -367,6 +376,16 @@ function init() {
                 return showToast('No tienes permiso para realizar evaluaciones estudiantiles.', { type: 'danger' });
             }
             if (this.value) {
+                // Check if teacher was already evaluated
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption && selectedOption.dataset.evaluated === 'true') {
+                    this.value = '';
+                    showToast('Ya has evaluado a este docente.', { type: 'warning' });
+                    const form = document.getElementById('student-evaluation-form');
+                    if (form) form.style.display = 'none';
+                    return;
+                }
+                
                 const form = document.getElementById('student-evaluation-form');
                 if (form) form.style.display = 'block';
                 renderStudentEvaluationItems();

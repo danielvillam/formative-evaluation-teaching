@@ -52,21 +52,43 @@ export async function loadData() {
     }
 }
 
-export async function populateTeachers() {
+export async function populateTeachers(userEmail = null) {
     const select = document.getElementById('select-teacher');
     if (!select) return;
 
     // Clear previous options except for the placeholder
     select.innerHTML = '<option value="">-- Seleccione un docente --</option>';
 
+    // Fetch evaluated teachers if userEmail is provided
+    let evaluatedTeacherIds = [];
+    if (userEmail) {
+        try {
+            const response = await fetch(`/api/get-student-evaluations?userEmail=${encodeURIComponent(userEmail)}`);
+            if (response.ok) {
+                const data = await response.json();
+                evaluatedTeacherIds = data.evaluatedTeacherIds || [];
+                console.log('Teachers already evaluated:', evaluatedTeacherIds);
+            }
+        } catch (error) {
+            console.error('Error fetching student evaluations:', error);
+        }
+    }
+
     // Fetch teacher data from the database
     try {
         const teachers = await fetchTeachers();
         if (teachers && teachers.length > 0) {
             teachers.forEach(teacher => {
+                const teacherId = teacher._id || teacher.id;
+                const isEvaluated = evaluatedTeacherIds.includes(teacherId);
+                
                 const option = document.createElement('option');
-                option.value = teacher._id || teacher.id;
-                option.textContent = teacher.name + (teacher.subject ? ` - ${teacher.subject}` : '');
+                option.value = teacherId;
+                option.textContent = teacher.name + 
+                    (teacher.subject ? ` - ${teacher.subject}` : '') +
+                    (isEvaluated ? ' (Ya evaluado)' : '');
+                option.disabled = isEvaluated;
+                option.dataset.evaluated = isEvaluated;
                 select.appendChild(option);
             });
         } else {
