@@ -481,37 +481,117 @@ function init() {
         planForm.reset();
     });
 
+    // Add registration form rendering
+    function renderRegistrationForm() {
+        return `
+        <div id="registration-section">
+            <h2>Registro</h2>
+            <form id="registration-form">
+                <div class="mb-3">
+                    <label for="reg-email" class="form-label">Correo Electrónico</label>
+                    <input type="email" class="form-control" id="reg-email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="reg-password" class="form-label">Contraseña</label>
+                    <input type="password" class="form-control" id="reg-password" required>
+                </div>
+                <div class="mb-3">
+                    <label for="reg-role" class="form-label">Rol</label>
+                    <select class="form-select" id="reg-role" required>
+                        <option value="student">Estudiante</option>
+                        <option value="teacher">Docente</option>
+                        <option value="director">Directivo</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Registrarse</button>
+            </form>
+        </div>`;
+    }
+
+    // Add registration form to the DOM
+    const registrationContainer = document.getElementById('registration-container');
+    if (registrationContainer) {
+        registrationContainer.innerHTML = renderRegistrationForm();
+    }
+
+    // Handle registration
+    async function handleRegistration(e) {
+        e.preventDefault();
+        const email = document.getElementById('reg-email').value;
+        const password = document.getElementById('reg-password').value;
+        const role = document.getElementById('reg-role').value;
+
+        try {
+            const user = await Clerk.users.createUser({
+                emailAddress: email,
+                password: password,
+                publicMetadata: { role },
+            });
+            showToast('Usuario registrado con éxito.', { type: 'success' });
+            console.log('Usuario registrado:', user);
+        } catch (error) {
+            console.error('Error al registrar usuario:', error);
+            showToast('Error al registrar usuario.', { type: 'danger' });
+        }
+    }
+
+    // Attach event listener to registration form
+    const registrationForm = document.getElementById('registration-form');
+    if (registrationForm) {
+        registrationForm.addEventListener('submit', handleRegistration);
+    }
 }
 
-function handleLogin(e) {
+async function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('email').value;
     const role = document.getElementById('role').value;
 
-    currentUser = { email, name: email.split('@')[0] };
-    currentRole = role;
+    try {
+        // Validate user existence in Clerk
+        const users = await Clerk.users.getUserList();
+        const user = users.find(u => u.emailAddresses.some(e => e.emailAddress === email));
 
-    // Re-render navbar after login
-    const navbarContainer = document.getElementById('navbar-container');
-    navbarContainer.innerHTML = renderNavbar(currentUser, currentRole);
+        if (!user) {
+            showToast('Usuario no registrado.', { type: 'danger' });
+            return;
+        }
 
-    // Re-assign logout event after login
-    document.getElementById('logout-btn').addEventListener('click', handleLogout);
+        // Check if the role matches the user's metadata
+        const userRole = user.publicMetadata.role;
+        if (userRole !== role) {
+            showToast('Rol incorrecto para este usuario.', { type: 'danger' });
+            return;
+        }
 
-    document.getElementById('login-section').style.display = 'none';
+        currentUser = { email, name: email.split('@')[0] };
+        currentRole = role;
 
-    const appSection = document.getElementById('app-section');
-    if (appSection) {
-        appSection.style.display = 'block';
-    } else {
-        console.error('El elemento con ID "app-section" no existe en el DOM.');
+        // Re-render navbar after login
+        const navbarContainer = document.getElementById('navbar-container');
+        navbarContainer.innerHTML = renderNavbar(currentUser, currentRole);
+
+        // Re-assign logout event after login
+        document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+        document.getElementById('login-section').style.display = 'none';
+
+        const appSection = document.getElementById('app-section');
+        if (appSection) {
+            appSection.style.display = 'block';
+        } else {
+            console.error('El elemento con ID "app-section" no existe en el DOM.');
+        }
+
+        // IMPORTANT: apply permissions so tabs/sections are shown for this role
+        enforcePermissions();
+
+        // Then switchRole to set active classes and do any role-specific initialization
+        switchRole(role);
+    } catch (error) {
+        console.error('Error al iniciar sesión:', error);
+        showToast('Error al validar el usuario.', { type: 'danger' });
     }
-
-    // IMPORTANT: apply permissions so tabs/sections are shown for this role
-    enforcePermissions();
-
-    // Then switchRole to set active classes and do any role-specific initialization
-    switchRole(role);
 }
 
 function handleLogout(e) {
@@ -525,6 +605,15 @@ function handleLogout(e) {
     document.getElementById('login-section').style.display = 'block';
     document.getElementById('app-section').style.display = 'none';
     document.getElementById('login-form').reset();
+
+    // Ensure the login section is fully rendered and visible
+    const loginContainer = document.getElementById('login-section');
+    if (loginContainer) {
+        loginContainer.style.display = 'block';
+        loginContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        console.error('El formulario de inicio de sesión no se pudo renderizar.');
+    }
 
     // Hide all sections and forms on logout
     enforcePermissions();
