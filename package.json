@@ -2,6 +2,7 @@
   "type": "module",
   "dependencies": {
     "@clerk/clerk-js": "^5.108.0",
+    "@clerk/clerk-sdk-node": "^4.13.23",
     "mongodb": "^6.21.0",
     "vite": "^6.4.1"
   },
