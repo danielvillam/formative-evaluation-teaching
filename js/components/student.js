@@ -194,8 +194,8 @@ export async function fetchTeachers() {
 
 export async function submitStudentEvaluation(teacherId, evaluationData, userEmail, userRole) {
     if (!teacherId || !evaluationData || !userEmail || !userRole) {
-        alert('Por favor, complete todos los campos antes de enviar la evaluación.');
-        return null;
+        console.error('Missing required fields for student evaluation');
+        throw new Error('Datos incompletos');
     }
 
     try {
@@ -211,13 +211,11 @@ export async function submitStudentEvaluation(teacherId, evaluationData, userEma
         }
 
         const result = await response.json();
-        alert('¡Evaluación enviada correctamente!');
-        window.location.href = '/'; // Redirige a la página de inicio
+        console.log('Student evaluation submitted successfully:', result);
         return result;
     } catch (error) {
         console.error('Error al enviar la evaluación:', error);
-        alert('Hubo un error al enviar la evaluación. Por favor, inténtelo de nuevo.');
-        return null;
+        throw error;
     }
 }
 

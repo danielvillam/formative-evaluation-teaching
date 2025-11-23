@@ -133,6 +133,69 @@ function switchRole(role) {
     }
 }
 
+// ---- Auto Session Restoration ----
+async function checkClerkSession() {
+    if (!clerkInstance) {
+        console.log('Clerk instance not available yet');
+        return false;
+    }
+
+    try {
+        // Wait for Clerk to be fully loaded
+        await clerkInstance.load();
+        
+        // Check if there's an active session
+        if (clerkInstance.session && clerkInstance.user) {
+            const user = clerkInstance.user;
+            const email = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress;
+            
+            if (!email) {
+                console.log('No email found in Clerk session');
+                return false;
+            }
+            
+            console.log('Active Clerk session found for:', email);
+            
+            // Get the stored role from Clerk metadata or localStorage
+            const roleFromMetadata = user.publicMetadata?.role;
+            const roleFromStorage = localStorage.getItem(`user_role_${email}`);
+            const role = roleFromMetadata || roleFromStorage;
+            
+            if (!role) {
+                console.log('No role found for user, requiring manual login');
+                return false;
+            }
+            
+            console.log('Restoring session with role:', role);
+            
+            // Restore the session
+            currentUser = { 
+                email, 
+                name: user.firstName || user.username || email.split('@')[0],
+                primaryEmailAddress: { emailAddress: email }
+            };
+            currentRole = role;
+            
+            // Update UI
+            const navbarContainer = document.getElementById('navbar-container');
+            navbarContainer.innerHTML = renderNavbar(currentUser, currentRole);
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('app-section').style.display = 'block';
+            enforcePermissions();
+            switchRole(currentRole);
+            
+            console.log('Session restored successfully');
+            return true;
+        } else {
+            console.log('No active Clerk session found');
+            return false;
+        }
+    } catch (error) {
+        console.error('Error checking Clerk session:', error);
+        return false;
+    }
+}
+
 // ---- Event Initialization and UI Event Handlers ----
 function init() {
     const loginForm = document.getElementById('login-form');
@@ -396,7 +459,7 @@ function init() {
         });
     }
     const studentForm = document.getElementById('student-eval-form');
-    if (studentForm) studentForm.addEventListener('submit', (e) => {
+    if (studentForm) studentForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!hasRole('student') && !hasRole('director')) return showToast('No tienes permiso para enviar esta evaluación.', { type: 'danger' });
 
@@ -445,13 +508,25 @@ function init() {
 
         console.log('Evaluación estudiantil enviada:', { teacherId, scores, userEmail, userRole });
 
-        submitStudentEvaluation(teacherId, scores, userEmail, userRole);
-
-        showToast('¡Evaluación enviada con éxito! Su respuesta es anónima.', { type: 'success' });
-        studentForm.reset();
-        if (selectTeacher) selectTeacher.value = '';
-        const formEl = document.getElementById('student-evaluation-form');
-        if (formEl) formEl.style.display = 'none';
+        try {
+            await submitStudentEvaluation(teacherId, scores, userEmail, userRole);
+            
+            showToast('¡Evaluación enviada con éxito! Su respuesta es anónima.', { type: 'success' });
+            studentForm.reset();
+            const selectTeacher = document.getElementById('select-teacher');
+            if (selectTeacher) selectTeacher.value = '';
+            const formEl = document.getElementById('student-evaluation-form');
+            if (formEl) formEl.style.display = 'none';
+            
+            // Reload teachers list to update evaluated status
+            const studentEmail = currentUser?.primaryEmailAddress?.emailAddress || currentUser?.email;
+            if (studentEmail) {
+                populateTeachers(studentEmail);
+            }
+        } catch (error) {
+            console.error('Error al enviar evaluación:', error);
+            showToast('Error al enviar la evaluación. Por favor, intente nuevamente.', { type: 'danger' });
+        }
     });
 
     // Director controls and analytics
@@ -791,8 +866,17 @@ async function handleLogin(e) {
     if (clerkInstance && clerkInstance.session) {
         console.log('Ya existe una sesión activa en Clerk');
         
-        // Get the stored role
-        const storedRole = localStorage.getItem(`user_role_${email}`) || clerkInstance.user?.publicMetadata?.role;
+        // Get the email from the active session
+        const activeEmail = clerkInstance.user?.primaryEmailAddress?.emailAddress || clerkInstance.user?.emailAddresses?.[0]?.emailAddress;
+        
+        // Check if the email from the form matches the active session
+        if (activeEmail && activeEmail !== email) {
+            showToast('Ya hay una sesión activa con otro usuario. Por favor, cierra sesión primero.', { type: 'danger', delay: 5000 });
+            return;
+        }
+        
+        // Get the stored role from Clerk metadata or localStorage
+        const storedRole = clerkInstance.user?.publicMetadata?.role || localStorage.getItem(`user_role_${activeEmail}`);
         
         // Validate that the selected role matches the stored role
         if (storedRole && storedRole !== role) {
@@ -805,7 +889,11 @@ async function handleLogin(e) {
             return;
         }
         
-        currentUser = { email, name: email.split('@')[0] };
+        currentUser = { 
+            email: activeEmail, 
+            name: activeEmail.split('@')[0],
+            primaryEmailAddress: { emailAddress: activeEmail }
+        };
         currentRole = storedRole || role;
         
         // Continue with login UI updates
@@ -1003,9 +1091,17 @@ async function handleLogout(e) {
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+    // Check for active Clerk session first
+    const sessionRestored = await checkClerkSession();
+    
     init();
-    enforcePermissions();
+    
+    // Only enforce permissions if session wasn't restored (to avoid double-call)
+    if (!sessionRestored) {
+        enforcePermissions();
+    }
+    
     setupFormToggle();
     
     // Check if there's a logout message to show
