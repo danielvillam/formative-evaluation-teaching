@@ -22,7 +22,7 @@ function showToast(message, options = {}) {
 import { renderNavbar } from './components/navbar.js';
 import { renderLoginSection } from './components/login.js';
 import { renderRegistrationForm } from './components/registration.js';
-import { renderTeacherSection, renderEvaluationItems, submitTeacherEvaluation } from './components/teacher.js';
+import { renderTeacherSection, renderEvaluationItems, submitTeacherEvaluation, updateSelfEvaluationButton } from './components/teacher.js';
 import { renderStudentSection, populateTeachers, renderStudentEvaluationItems, submitStudentEvaluation } from './components/student.js';
 import { renderDirectorSection, updateDirectorChartAndTable } from './components/director.js';
 import { Clerk } from '@clerk/clerk-js';
@@ -114,6 +114,14 @@ function switchRole(role) {
 
     document.getElementById('self-evaluation-form')?.style && (document.getElementById('self-evaluation-form').style.display = 'none');
     document.getElementById('results-visualization')?.style && (document.getElementById('results-visualization').style.display = 'none');
+
+    if (role === 'teacher') {
+        // Check if teacher has already completed self-evaluation
+        const teacherId = currentUser?.id || currentUser?.email;
+        if (teacherId) {
+            updateSelfEvaluationButton(teacherId);
+        }
+    }
 
     if (role === 'student') {
         // Load teachers with evaluated status for current student
@@ -406,6 +414,9 @@ function init() {
         try {
             await submitTeacherEvaluation(teacherId, { scores, reflection }, userEmail, userRole);
             showToast('¡Evaluación enviada con éxito!', { type: 'success' });
+            
+            // Update button status to show evaluation is completed
+            await updateSelfEvaluationButton(teacherId);
             
             // Hide and clear views
             const formEl = document.getElementById('self-evaluation-form');

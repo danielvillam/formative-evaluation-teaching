@@ -237,6 +237,54 @@ export async function renderEvaluationItems() {
     });
 }
 
+export async function checkTeacherSelfEvaluation(teacherId) {
+    if (!teacherId) {
+        console.error('Teacher ID is required');
+        return false;
+    }
+
+    try {
+        const response = await fetch(`/api/get-teacher-self-evaluation?teacherId=${encodeURIComponent(teacherId)}`);
+        
+        if (!response.ok) {
+            console.error('Error checking teacher self-evaluation:', response.status);
+            return false;
+        }
+
+        const data = await response.json();
+        return data.hasEvaluated || false;
+    } catch (error) {
+        console.error('Error checking teacher self-evaluation:', error);
+        return false;
+    }
+}
+
+export async function updateSelfEvaluationButton(teacherId) {
+    const button = document.getElementById('start-self-eval');
+    if (!button) return;
+
+    const hasEvaluated = await checkTeacherSelfEvaluation(teacherId);
+    
+    if (hasEvaluated) {
+        button.disabled = true;
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-secondary');
+        button.innerHTML = '<i class="bi bi-check-circle me-2"></i>Autoevaluación Completada';
+        
+        // Update card text
+        const cardText = button.closest('.card-body')?.querySelector('.card-text');
+        if (cardText) {
+            cardText.textContent = 'Ya has completado tu autoevaluación. Puedes revisar tus resultados en la sección correspondiente.';
+            cardText.classList.add('text-muted');
+        }
+    } else {
+        button.disabled = false;
+        button.classList.remove('btn-secondary');
+        button.classList.add('btn-primary');
+        button.innerHTML = 'Comenzar Autoevaluación';
+    }
+}
+
 export async function submitTeacherEvaluation(teacherId, evaluationData, userEmail, userRole) {
     if (!teacherId || !evaluationData || !userEmail || !userRole) {
         console.error('Missing required fields for teacher evaluation');
