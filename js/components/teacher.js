@@ -343,7 +343,7 @@ export function processTeacherResults(resultsData) {
     
     // Process self-evaluation scores
     const selfScores = selfEvaluation ? 
-        Object.entries(selfEvaluation.evaluationData.scores || {}).map(([id, score]) => ({
+        Object.entries(selfEvaluation.evaluationData?.scores || selfEvaluation.evaluationData || {}).map(([id, score]) => ({
             questionId: parseInt(id),
             score: score
         })) : [];
@@ -352,20 +352,23 @@ export function processTeacherResults(resultsData) {
     const studentScoresMap = {};
     
     studentEvaluations.forEach(evaluation => {
-        const scores = evaluation.evaluationData || evaluation.evaluationData?.scores || {};
-        Object.entries(scores).forEach(([id, score]) => {
+        // Handle both formats: {scores: {...}} and direct scores object
+        const scoresData = evaluation.evaluationData?.scores || evaluation.evaluationData || {};
+        Object.entries(scoresData).forEach(([id, score]) => {
             const questionId = parseInt(id);
             if (!studentScoresMap[questionId]) {
                 studentScoresMap[questionId] = [];
             }
-            studentScoresMap[questionId].push(score);
+            if (typeof score === 'number' && score > 0) {
+                studentScoresMap[questionId].push(score);
+            }
         });
     });
 
     // Calculate averages
     const studentScores = Object.entries(studentScoresMap).map(([id, scores]) => ({
         questionId: parseInt(id),
-        score: scores.reduce((a, b) => a + b, 0) / scores.length
+        score: scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0
     }));
 
     return {

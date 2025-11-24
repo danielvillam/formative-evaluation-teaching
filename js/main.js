@@ -276,6 +276,14 @@ function init() {
         const resultsVis = document.getElementById('results-visualization');
         if (resultsVis) resultsVis.style.display = 'block';
 
+        // Load evaluation items if not already loaded
+        let evaluationItems = window.evaluationItems;
+        if (!evaluationItems) {
+            const response = await fetch('/api/getTeacherQuestions');
+            evaluationItems = await response.json();
+            window.evaluationItems = evaluationItems;
+        }
+
         // Fetch real data from database
         const resultsData = await getTeacherResults(teacherId);
         
