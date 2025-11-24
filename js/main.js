@@ -22,7 +22,7 @@ function showToast(message, options = {}) {
 import { renderNavbar } from './components/navbar.js';
 import { renderLoginSection } from './components/login.js';
 import { renderRegistrationForm } from './components/registration.js';
-import { renderTeacherSection, renderEvaluationItems, submitTeacherEvaluation, updateSelfEvaluationButton } from './components/teacher.js';
+import { renderTeacherSection, renderEvaluationItems, submitTeacherEvaluation, updateSelfEvaluationButton, getTeacherResults, processTeacherResults } from './components/teacher.js';
 import { renderStudentSection, populateTeachers, renderStudentEvaluationItems, submitStudentEvaluation } from './components/student.js';
 import { renderDirectorSection, updateDirectorChartAndTable } from './components/director.js';
 import { Clerk } from '@clerk/clerk-js';
@@ -258,32 +258,93 @@ function init() {
 
     // View results: hide self-assessment form and show results (render charts)
     const viewResultsBtn = document.getElementById('view-results');
-    if (viewResultsBtn) viewResultsBtn.addEventListener('click', () => {
+    if (viewResultsBtn) viewResultsBtn.addEventListener('click', async () => {
         if (!hasRole('teacher') && !hasRole('director')) return showToast('No tienes permiso para ver los resultados.', { type: 'danger' });
-    // Hide self-assessment form if visible
+        
+        // Get teacher ID
+        const teacherId = currentUser?.primaryEmailAddress?.emailAddress || currentUser?.email;
+        if (!teacherId) {
+            showToast('Error: No se pudo identificar al docente.', { type: 'danger' });
+            return;
+        }
+
+        // Hide self-assessment form if visible
         const form = document.getElementById('self-evaluation-form');
         if (form) form.style.display = 'none';
 
-    // Show results section
+        // Show results section
         const resultsVis = document.getElementById('results-visualization');
         if (resultsVis) resultsVis.style.display = 'block';
 
-    // Simulated data: replace with real data in production
-    // By question
-    const autoScores = evaluationItems.map(item => Math.round(3.5 + Math.random() * 1.5 * 10) / 10); // 3.5-5.0
-    const studentScores = evaluationItems.map(item => Math.round(3.0 + Math.random() * 2 * 10) / 10); // 3.0-5.0
-    // By category
+        // Fetch real data from database
+        const resultsData = await getTeacherResults(teacherId);
+        
+        if (!resultsData || !resultsData.hasData) {
+            // No data available - show message
+            const summaryDiv = document.getElementById('results-summary');
+            if (summaryDiv) {
+                summaryDiv.innerHTML = `
+                    <div class="alert alert-info" role="alert">
+                        <h5 class="alert-heading"><i class="bi bi-info-circle me-2"></i>No hay datos disponibles</h5>
+                        <p class="mb-0">Aún no se han recopilado suficientes datos para generar resultados.</p>
+                        <hr>
+                        <p class="mb-0 small">
+                            ${!resultsData?.selfEvaluation ? '• Completa tu autoevaluación<br>' : ''}
+                            ${(!resultsData?.studentEvaluations || resultsData.studentEvaluations.length === 0) ? '• Espera a que los estudiantes completen sus evaluaciones' : ''}
+                        </p>
+                    </div>
+                `;
+            }
+            
+            // Clear charts and table
+            if (window.resultsChart) window.resultsChart.destroy();
+            if (window.comparisonChart) window.comparisonChart.destroy();
+            const tableBody = document.querySelector('#results-comparison-table tbody');
+            if (tableBody) tableBody.innerHTML = '';
+            
+            return;
+        }
+
+        // Process the data
+        const processedData = processTeacherResults(resultsData);
+        
+        if (!processedData || !processedData.hasData) {
+            showToast('No hay datos suficientes para generar resultados.', { type: 'warning' });
+            return;
+        }
+
+        // Create arrays aligned with evaluationItems
+        const autoScores = [];
+        const studentScores = [];
+        
+        evaluationItems.forEach((item, idx) => {
+            const questionId = item.id || (idx + 1);
+            
+            // Find self-evaluation score
+            const selfScore = processedData.selfScores.find(s => s.questionId === questionId);
+            autoScores.push(selfScore ? selfScore.score : 0);
+            
+            // Find student average score
+            const studentScore = processedData.studentScores.find(s => s.questionId === questionId);
+            studentScores.push(studentScore ? studentScore.score : 0);
+        });
+
+        // Calculate category averages
         const categories = [...new Set(evaluationItems.map(item => item.category))];
         const categoryAveragesAuto = categories.map(cat => {
             const idxs = evaluationItems.map((item, i) => item.category === cat ? i : -1).filter(i => i !== -1);
-            return Math.round(idxs.reduce((sum, i) => sum + autoScores[i], 0) / idxs.length * 10) / 10;
+            const sum = idxs.reduce((sum, i) => sum + autoScores[i], 0);
+            const count = idxs.filter(i => autoScores[i] > 0).length;
+            return count > 0 ? Math.round(sum / count * 10) / 10 : 0;
         });
         const categoryAveragesStudent = categories.map(cat => {
             const idxs = evaluationItems.map((item, i) => item.category === cat ? i : -1).filter(i => i !== -1);
-            return Math.round(idxs.reduce((sum, i) => sum + studentScores[i], 0) / idxs.length * 10) / 10;
+            const sum = idxs.reduce((sum, i) => sum + studentScores[i], 0);
+            const count = idxs.filter(i => studentScores[i] > 0).length;
+            return count > 0 ? Math.round(sum / count * 10) / 10 : 0;
         });
 
-    // Bar chart by category
+        // Bar chart by category
         const resultsCanvas = document.getElementById('results-chart');
         if (resultsCanvas) {
             const resultsCtx = resultsCanvas.getContext('2d');
@@ -294,8 +355,18 @@ function init() {
                     data: {
                         labels: categories,
                         datasets: [
-                            { label: 'Autoevaluación', data: categoryAveragesAuto, backgroundColor: '#0d6efd' },
-                            { label: 'Estudiantes', data: categoryAveragesStudent, backgroundColor: '#ffc107' }
+                            { 
+                                label: 'Autoevaluación', 
+                                data: categoryAveragesAuto, 
+                                backgroundColor: '#0d6efd',
+                                hidden: !processedData.hasSelfEvaluation
+                            },
+                            { 
+                                label: `Estudiantes (${processedData.studentCount})`, 
+                                data: categoryAveragesStudent, 
+                                backgroundColor: '#ffc107',
+                                hidden: !processedData.hasStudentEvaluations
+                            }
                         ]
                     },
                     options: { scales: { y: { beginAtZero: true, max: 5 } } }
@@ -303,7 +374,7 @@ function init() {
             }
         }
 
-    // Radar chart for comparison
+        // Radar chart for comparison
         const comparisonCanvas = document.getElementById('comparison-chart');
         if (comparisonCanvas) {
             const comparisonCtx = comparisonCanvas.getContext('2d');
@@ -314,8 +385,22 @@ function init() {
                     data: {
                         labels: categories,
                         datasets: [
-                            { label: 'Autoevaluación', data: categoryAveragesAuto, backgroundColor: 'rgba(13,110,253,0.2)', borderColor: '#0d6efd', pointBackgroundColor: '#0d6efd' },
-                            { label: 'Estudiantes', data: categoryAveragesStudent, backgroundColor: 'rgba(255,193,7,0.2)', borderColor: '#ffc107', pointBackgroundColor: '#ffc107' }
+                            { 
+                                label: 'Autoevaluación', 
+                                data: categoryAveragesAuto, 
+                                backgroundColor: 'rgba(13,110,253,0.2)', 
+                                borderColor: '#0d6efd', 
+                                pointBackgroundColor: '#0d6efd',
+                                hidden: !processedData.hasSelfEvaluation
+                            },
+                            { 
+                                label: `Estudiantes (${processedData.studentCount})`, 
+                                data: categoryAveragesStudent, 
+                                backgroundColor: 'rgba(255,193,7,0.2)', 
+                                borderColor: '#ffc107', 
+                                pointBackgroundColor: '#ffc107',
+                                hidden: !processedData.hasStudentEvaluations
+                            }
                         ]
                     },
                     options: { scales: { r: { beginAtZero: true, max: 5 } } }
@@ -323,39 +408,59 @@ function init() {
             }
         }
 
-    // Comparison table by question
+        // Comparison table by question
         const tableBody = document.querySelector('#results-comparison-table tbody');
         if (tableBody) {
             tableBody.innerHTML = '';
             evaluationItems.forEach((item, idx) => {
                 const tr = document.createElement('tr');
+                const autoScore = autoScores[idx] > 0 ? autoScores[idx].toFixed(1) : '-';
+                const studentScore = studentScores[idx] > 0 ? studentScores[idx].toFixed(1) : '-';
+                
                 tr.innerHTML = `
                     <td>${item.text}</td>
-                    <td class="text-center">${autoScores[idx]}</td>
-                    <td class="text-center">${studentScores[idx]}</td>
+                    <td class="text-center">${autoScore}</td>
+                    <td class="text-center">${studentScore}</td>
                 `;
                 tableBody.appendChild(tr);
             });
         }
 
-    // Text summary (simple, can be improved)
+        // Text summary
         const summaryDiv = document.getElementById('results-summary');
         if (summaryDiv) {
-            // Find differences greater than 0.5
-            let strengths = [], opportunities = [];
-            evaluationItems.forEach((item, idx) => {
-                const diff = autoScores[idx] - studentScores[idx];
-                if (diff >= 0.5) strengths.push(item.text);
-                else if (diff <= -0.5) opportunities.push(item.text);
-            });
-            let html = '';
-            if (strengths.length > 0) html += `<b>Fortalezas percibidas:</b> <ul>${strengths.map(t => `<li>${t}</li>`).join('')}</ul>`;
-            if (opportunities.length > 0) html += `<b>Oportunidades de mejora:</b> <ul>${opportunities.map(t => `<li>${t}</li>`).join('')}</ul>`;
-            if (!html) html = 'No se detectaron diferencias significativas entre autoevaluación y percepción estudiantil.';
+            let html = `<div class="mb-3"><strong>Evaluaciones recibidas:</strong> `;
+            if (processedData.hasSelfEvaluation) html += `Autoevaluación completada. `;
+            if (processedData.hasStudentEvaluations) html += `${processedData.studentCount} evaluación(es) de estudiantes.`;
+            html += `</div>`;
+            
+            // Find differences greater than 0.5 (only if both evaluations exist)
+            if (processedData.hasSelfEvaluation && processedData.hasStudentEvaluations) {
+                let strengths = [], opportunities = [];
+                evaluationItems.forEach((item, idx) => {
+                    if (autoScores[idx] > 0 && studentScores[idx] > 0) {
+                        const diff = autoScores[idx] - studentScores[idx];
+                        if (diff >= 0.5) strengths.push(item.text);
+                        else if (diff <= -0.5) opportunities.push(item.text);
+                    }
+                });
+                
+                if (strengths.length > 0) html += `<b>Fortalezas percibidas:</b> <ul>${strengths.map(t => `<li>${t}</li>`).join('')}</ul>`;
+                if (opportunities.length > 0) html += `<b>Oportunidades de mejora:</b> <ul>${opportunities.map(t => `<li>${t}</li>`).join('')}</ul>`;
+                if (strengths.length === 0 && opportunities.length === 0) {
+                    html += '<p class="text-muted">No se detectaron diferencias significativas entre autoevaluación y percepción estudiantil.</p>';
+                }
+            } else if (!processedData.hasSelfEvaluation) {
+                html += '<p class="text-info"><i class="bi bi-info-circle"></i> Completa tu autoevaluación para ver comparaciones detalladas.</p>';
+            } else if (!processedData.hasStudentEvaluations) {
+                html += '<p class="text-info"><i class="bi bi-info-circle"></i> Aún no hay evaluaciones de estudiantes para comparar.</p>';
+            }
+            
+            summaryDiv.innerHTML = html;
             summaryDiv.innerHTML = html;
         }
 
-    // Scroll to results section
+        // Scroll to results section
         resultsVis.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
