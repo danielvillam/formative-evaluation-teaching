@@ -147,20 +147,42 @@ export function renderTeacherSection() {
                         </div>
                     </div>
                     <div class="mt-4">
-                        <h5 class="mb-3">Tabla comparativa por pregunta</h5>
-                        <div class="table-responsive">
-                            <table class="table table-bordered align-middle" id="results-comparison-table">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Pregunta</th>
-                                        <th>Autoevaluación</th>
-                                        <th>Promedio Estudiantil</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Se llenará dinámicamente -->
-                                </tbody>
-                            </table>
+                        <h5 class="mb-3">Resultados Detallados</h5>
+                        
+                        <!-- Autoevaluación Table -->
+                        <div class="mb-4" id="self-eval-table-container">
+                            <h6 class="text-primary"><i class="bi bi-person-check me-2"></i>Autoevaluación Docente</h6>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm align-middle">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th style="width: 70%">Pregunta</th>
+                                            <th class="text-center">Puntuación</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="self-eval-table-body">
+                                        <!-- Se llenará dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Student Evaluations Table -->
+                        <div class="mb-4" id="student-eval-table-container">
+                            <h6 class="text-warning"><i class="bi bi-people-fill me-2"></i>Evaluación Estudiantil (Promedio)</h6>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm align-middle">
+                                    <thead class="table-warning">
+                                        <tr>
+                                            <th style="width: 70%">Pregunta</th>
+                                            <th class="text-center">Promedio</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="student-eval-table-body">
+                                        <!-- Se llenará dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                     <div class="mt-4">
