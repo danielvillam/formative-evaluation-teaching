@@ -841,6 +841,33 @@ async function handleRegistration(e) {
                 
                 // Also store in localStorage as backup
                 localStorage.setItem(`user_role_${email}`, role);
+                
+                // If teacher, add to teachers collection
+                if (role === 'teacher') {
+                    try {
+                        const teacherResponse = await fetch('/api/add-teacher', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                teacherId: email,
+                                name: email.split('@')[0] // Use email prefix as default name
+                            })
+                        });
+
+                        const teacherData = await teacherResponse.json();
+                        
+                        if (teacherResponse.ok) {
+                            console.log('Teacher added to database:', teacherData);
+                        } else {
+                            console.error('Error adding teacher:', teacherData);
+                        }
+                    } catch (teacherError) {
+                        console.error('Error adding teacher to database:', teacherError);
+                        // Don't show error to user, just log it
+                    }
+                }
             } catch (metadataError) {
                 console.error('Error saving role to Clerk:', metadataError);
                 console.error('Error details:', metadataError.message);
@@ -1145,6 +1172,27 @@ async function handleLogin(e) {
                     
                     if (response.ok) {
                         console.log('Role saved to Clerk during login:', data);
+                        
+                        // If teacher, ensure they're in the teachers collection
+                        if (role === 'teacher') {
+                            try {
+                                const teacherResponse = await fetch('/api/add-teacher', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        teacherId: email,
+                                        name: email.split('@')[0]
+                                    })
+                                });
+
+                                const teacherData = await teacherResponse.json();
+                                console.log('Teacher check/add result:', teacherData);
+                            } catch (teacherError) {
+                                console.error('Error checking/adding teacher:', teacherError);
+                            }
+                        }
                     } else {
                         console.error('Failed to save role during login:', data);
                     }
