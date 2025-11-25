@@ -24,7 +24,7 @@ import { renderLoginSection } from './components/login.js';
 import { renderRegistrationForm } from './components/registration.js';
 import { renderTeacherSection, renderEvaluationItems, submitTeacherEvaluation, updateSelfEvaluationButton, getTeacherResults, processTeacherResults } from './components/teacher.js';
 import { renderStudentSection, populateTeachers, renderStudentEvaluationItems, submitStudentEvaluation } from './components/student.js';
-import { renderDirectorSection, updateDirectorChartAndTable } from './components/director.js';
+import { renderDirectorSection, loadDirectorData, updateDirectorDashboard, exportDirectorReport } from './components/director.js';
 import { Clerk } from '@clerk/clerk-js';
 
 let currentUser = null;
@@ -96,7 +96,7 @@ function enforcePermissions() {
 /**
  * Attempt to switch tabs. If it doesn't match the current role, block access.
  */
-function switchRole(role) {
+async function switchRole(role) {
     if (!currentRole) {
         showToast('Debes iniciar sesión.', { type: 'danger' });
         return;
@@ -132,11 +132,29 @@ function switchRole(role) {
     }
 
     if (role === 'director') {
+        // Load real data from database
+        const loadingDiv = document.getElementById('director-loading');
+        const contentDiv = document.getElementById('director-content');
+        
+        if (loadingDiv) loadingDiv.style.display = 'block';
+        if (contentDiv) contentDiv.style.display = 'none';
+        
         try {
-            const ctx = document.getElementById('director-chart')?.getContext('2d');
-            if (ctx) updateDirectorChartAndTable(ctx);
+            const stats = await loadDirectorData();
+            updateDirectorDashboard(stats);
+            
+            // Store stats for export functionality
+            window.directorStats = stats;
+            
+            if (loadingDiv) loadingDiv.style.display = 'none';
+            if (contentDiv) contentDiv.style.display = 'block';
         } catch (error) {
-            console.error('Error initializing director charts:', error);
+            console.error('Error loading director data:', error);
+            if (typeof showToast === 'function') {
+                showToast('Error al cargar las estadísticas del director.', { type: 'danger' });
+            }
+            if (loadingDiv) loadingDiv.style.display = 'none';
+            if (contentDiv) contentDiv.style.display = 'block';
         }
     }
 }
@@ -703,27 +721,52 @@ function init() {
     });
 
     // Director controls and analytics
-    const reportType = document.getElementById('report-type');
-    const timePeriod = document.getElementById('time-period');
-    if (reportType) reportType.addEventListener('change', () => {
-        if (!hasRole('director')) return alert('No tienes permiso para cambiar los filtros de administración.');
-        const ctx = document.getElementById('director-chart')?.getContext('2d');
-        if (ctx) updateDirectorChartAndTable(ctx);
+    const refreshDirectorBtn = document.getElementById('refresh-director-data');
+    if (refreshDirectorBtn) refreshDirectorBtn.addEventListener('click', async () => {
+        if (!hasRole('director')) return showToast('No tienes permiso para actualizar datos.', { type: 'danger' });
+        
+        const loadingDiv = document.getElementById('director-loading');
+        const contentDiv = document.getElementById('director-content');
+        
+        if (loadingDiv) loadingDiv.style.display = 'block';
+        if (contentDiv) contentDiv.style.display = 'none';
+        
+        try {
+            const stats = await loadDirectorData();
+            updateDirectorDashboard(stats);
+            window.directorStats = stats;
+            showToast('Datos actualizados correctamente.', { type: 'success' });
+        } catch (error) {
+            console.error('Error refreshing director data:', error);
+            showToast('Error al actualizar datos.', { type: 'danger' });
+        } finally {
+            if (loadingDiv) loadingDiv.style.display = 'none';
+            if (contentDiv) contentDiv.style.display = 'block';
+        }
     });
-    if (timePeriod) timePeriod.addEventListener('change', () => {
-        if (!hasRole('director')) return alert('No tienes permiso para cambiar los filtros de administración.');
-        const ctx = document.getElementById('director-chart')?.getContext('2d');
-        if (ctx) updateDirectorChartAndTable(ctx);
-    });
+
     const exportBtn = document.getElementById('export-report');
     if (exportBtn) exportBtn.addEventListener('click', () => {
         if (!hasRole('director')) return showToast('No tienes permiso para exportar reportes.', { type: 'danger' });
-        showToast('Funcionalidad de exportación (marchar a backend)', { type: 'info' });
+        
+        if (window.directorStats) {
+            exportDirectorReport(window.directorStats);
+            showToast('Reporte exportado correctamente.', { type: 'success' });
+        } else {
+            showToast('No hay datos para exportar. Primero carga las estadísticas.', { type: 'warning' });
+        }
     });
-    const detailedAnalysis = document.getElementById('detailed-analysis');
-    if (detailedAnalysis) detailedAnalysis.addEventListener('click', () => {
-        if (!hasRole('director')) return alert('No tienes permiso para ver análisis detallado.');
-        alert('Funcionalidad de análisis detallado (marchar a backend)');
+
+    const exportSummaryBtn = document.getElementById('export-summary');
+    if (exportSummaryBtn) exportSummaryBtn.addEventListener('click', () => {
+        if (!hasRole('director')) return showToast('No tienes permiso para exportar resumen.', { type: 'danger' });
+        
+        if (window.directorStats) {
+            exportDirectorReport(window.directorStats);
+            showToast('Resumen exportado correctamente.', { type: 'success' });
+        } else {
+            showToast('No hay datos para exportar.', { type: 'warning' });
+        }
     });
 
     // Small header button: open improvement plan
