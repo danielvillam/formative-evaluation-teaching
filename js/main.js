@@ -22,7 +22,7 @@ function showToast(message, options = {}) {
 import { renderNavbar } from './components/navbar.js';
 import { renderLoginSection } from './components/login.js';
 import { renderRegistrationForm } from './components/registration.js';
-import { renderTeacherSection, renderEvaluationItems, submitTeacherEvaluation, updateSelfEvaluationButton, getTeacherResults, processTeacherResults } from './components/teacher.js';
+import { renderTeacherSection, renderEvaluationItems, submitTeacherEvaluation, updateSelfEvaluationButton, getTeacherResults, processTeacherResults, exportTeacherResults } from './components/teacher.js';
 import { renderStudentSection, populateTeachers, renderStudentEvaluationItems, submitStudentEvaluation } from './components/student.js';
 import { renderDirectorSection, loadDirectorData, updateDirectorDashboard, exportDirectorReport } from './components/director.js';
 import { Clerk } from '@clerk/clerk-js';
@@ -538,6 +538,182 @@ function init() {
 
         // Scroll to results section
         resultsVis.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // Refresh teacher results button
+    const refreshResultsBtn = document.getElementById('refresh-results');
+    if (refreshResultsBtn) refreshResultsBtn.addEventListener('click', async () => {
+        if (!hasRole('teacher') && !hasRole('director')) {
+            return showToast('No tienes permiso para actualizar resultados.', { type: 'danger' });
+        }
+
+        const teacherId = currentUser?.primaryEmailAddress?.emailAddress || currentUser?.email;
+        if (!teacherId) {
+            showToast('Error: No se pudo identificar al docente.', { type: 'danger' });
+            return;
+        }
+
+        try {
+            showToast('Actualizando resultados...', { type: 'info', delay: 1500 });
+
+            // Load teacher questions if not already loaded
+            let teacherQuestions = window.evaluationItems;
+            if (!teacherQuestions) {
+                const response = await fetch('/api/getTeacherQuestions');
+                teacherQuestions = await response.json();
+                window.evaluationItems = teacherQuestions;
+            }
+
+            // Load student questions
+            let studentQuestions = window.studentEvaluationItems;
+            if (!studentQuestions) {
+                const response = await fetch('/api/getStudentQuestions');
+                studentQuestions = await response.json();
+                window.studentEvaluationItems = studentQuestions;
+            }
+
+            // Fetch real data from database
+            const resultsData = await getTeacherResults(teacherId);
+            const processedData = processTeacherResults(resultsData);
+
+            if (!processedData || !processedData.hasData) {
+                showToast('No hay datos disponibles para actualizar.', { type: 'warning' });
+                return;
+            }
+
+            // Update tables and charts (reuse the logic from view results)
+            // Fill Self-Evaluation Table
+            const selfEvalTableBody = document.getElementById('self-eval-table-body');
+            const selfEvalContainer = document.getElementById('self-eval-table-container');
+            if (selfEvalTableBody && processedData.hasSelfEvaluation) {
+                selfEvalContainer.style.display = 'block';
+                selfEvalTableBody.innerHTML = '';
+                teacherQuestions.forEach((item, idx) => {
+                    const questionId = item.id || (idx + 1);
+                    const selfScore = processedData.selfScores.find(s => s.questionId === questionId);
+                    if (selfScore && selfScore.score > 0) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${item.question || item.text}</td>
+                            <td class="text-center"><span class="badge bg-primary">${selfScore.score}</span></td>
+                        `;
+                        selfEvalTableBody.appendChild(tr);
+                    }
+                });
+            }
+
+            // Fill Student Evaluations Table
+            const studentEvalTableBody = document.getElementById('student-eval-table-body');
+            const studentEvalContainer = document.getElementById('student-eval-table-container');
+            if (studentEvalTableBody && processedData.hasStudentEvaluations) {
+                studentEvalContainer.style.display = 'block';
+                studentEvalTableBody.innerHTML = '';
+                studentQuestions.forEach((item, idx) => {
+                    const questionId = (idx + 1);
+                    const studentScore = processedData.studentScores.find(s => s.questionId === questionId);
+                    if (studentScore && studentScore.score > 0) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${item.question || item.text}</td>
+                            <td class="text-center"><span class="badge bg-warning text-dark">${studentScore.score.toFixed(1)}</span></td>
+                        `;
+                        studentEvalTableBody.appendChild(tr);
+                    }
+                });
+            }
+
+            // Update charts
+            const selfAverage = processedData.hasSelfEvaluation ?
+                processedData.selfScores.reduce((sum, s) => sum + s.score, 0) / processedData.selfScores.length : 0;
+            
+            const studentAverage = processedData.hasStudentEvaluations ?
+                processedData.studentScores.reduce((sum, s) => sum + s.score, 0) / processedData.studentScores.length : 0;
+
+            // Update bar chart
+            if (window.resultsChart) {
+                window.resultsChart.data.datasets[0].data = [selfAverage.toFixed(2)];
+                window.resultsChart.data.datasets[1].data = [studentAverage.toFixed(2)];
+                window.resultsChart.update();
+            }
+
+            // Update radar chart
+            if (window.comparisonChart) {
+                const scoreRanges = ['1-2', '2-3', '3-4', '4-5'];
+                const selfDistribution = [0, 0, 0, 0];
+                const studentDistribution = [0, 0, 0, 0];
+                
+                processedData.selfScores.forEach(s => {
+                    if (s.score <= 2) selfDistribution[0]++;
+                    else if (s.score <= 3) selfDistribution[1]++;
+                    else if (s.score <= 4) selfDistribution[2]++;
+                    else selfDistribution[3]++;
+                });
+                
+                processedData.studentScores.forEach(s => {
+                    if (s.score <= 2) studentDistribution[0]++;
+                    else if (s.score <= 3) studentDistribution[1]++;
+                    else if (s.score <= 4) studentDistribution[2]++;
+                    else studentDistribution[3]++;
+                });
+
+                window.comparisonChart.data.datasets[0].data = selfDistribution;
+                window.comparisonChart.data.datasets[1].data = studentDistribution;
+                window.comparisonChart.update();
+            }
+
+            showToast('Resultados actualizados correctamente.', { type: 'success' });
+        } catch (error) {
+            console.error('Error refreshing results:', error);
+            showToast('Error al actualizar resultados.', { type: 'danger' });
+        }
+    });
+
+    // Export teacher results button
+    const exportTeacherResultsBtn = document.getElementById('export-teacher-results');
+    if (exportTeacherResultsBtn) exportTeacherResultsBtn.addEventListener('click', async () => {
+        if (!hasRole('teacher') && !hasRole('director')) {
+            return showToast('No tienes permiso para exportar resultados.', { type: 'danger' });
+        }
+
+        const teacherId = currentUser?.primaryEmailAddress?.emailAddress || currentUser?.email;
+        const teacherName = currentUser?.fullName || currentUser?.firstName || teacherId.split('@')[0];
+
+        if (!teacherId) {
+            showToast('Error: No se pudo identificar al docente.', { type: 'danger' });
+            return;
+        }
+
+        try {
+            // Load questions if needed
+            let teacherQuestions = window.evaluationItems;
+            if (!teacherQuestions) {
+                const response = await fetch('/api/getTeacherQuestions');
+                teacherQuestions = await response.json();
+                window.evaluationItems = teacherQuestions;
+            }
+
+            let studentQuestions = window.studentEvaluationItems;
+            if (!studentQuestions) {
+                const response = await fetch('/api/getStudentQuestions');
+                studentQuestions = await response.json();
+                window.studentEvaluationItems = studentQuestions;
+            }
+
+            // Fetch and process data
+            const resultsData = await getTeacherResults(teacherId);
+            const processedData = processTeacherResults(resultsData);
+
+            if (!processedData || !processedData.hasData) {
+                showToast('No hay datos para exportar.', { type: 'warning' });
+                return;
+            }
+
+            exportTeacherResults(teacherName, processedData, teacherQuestions, studentQuestions);
+            showToast('Resultados exportados correctamente.', { type: 'success' });
+        } catch (error) {
+            console.error('Error exporting results:', error);
+            showToast('Error al exportar resultados.', { type: 'danger' });
+        }
     });
 
     // Handle teacher self-assessment form submission

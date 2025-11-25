@@ -5,10 +5,10 @@ export function renderDirectorSection() {
            <div class="card-header role-director">
                 <h4 class="mb-0">Panel de Directivos - Reportes y Analytics</h4>
                 <div class="header-actions">
-                    <button class="btn btn-sm btn-outline-light" id="refresh-director-data" title="Actualizar datos">
+                    <button class="btn btn-sm btn-light" id="refresh-director-data" title="Actualizar datos">
                         <i class="bi bi-arrow-clockwise"></i> Actualizar
                     </button>
-                    <button class="btn btn-sm btn-outline-light" id="export-summary" title="Exportar resumen">
+                    <button class="btn btn-sm btn-light" id="export-summary" title="Exportar resumen">
                         <i class="bi bi-download"></i> Exportar
                     </button>
                 </div>

@@ -127,8 +127,11 @@ export function renderTeacherSection() {
                 <div class="card-header role-teacher">
                     <h4 class="mb-0">Resultados de Evaluación</h4>
                     <div class="header-actions">
-                        <button class="btn btn-sm btn-outline-secondary" id="refresh-results" title="Refrescar">
-                            <i class="bi bi-arrow-clockwise"></i>
+                        <button class="btn btn-sm btn-light" id="refresh-results" title="Actualizar datos">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                        </button>
+                        <button class="btn btn-sm btn-light" id="export-teacher-results" title="Exportar resultados">
+                            <i class="bi bi-download"></i> Exportar
                         </button>
                     </div>
                 </div>
@@ -401,4 +404,73 @@ export function processTeacherResults(resultsData) {
         hasStudentEvaluations: studentScores.length > 0,
         studentCount: studentEvaluations.length
     };
+}
+
+export function exportTeacherResults(teacherName, processedData, teacherQuestions, studentQuestions) {
+    if (!processedData || !processedData.hasData) {
+        alert('No hay datos para exportar');
+        return;
+    }
+
+    // Create CSV content
+    let csv = `Resultados de Evaluación - ${teacherName}\n`;
+    csv += `Fecha: ${new Date().toLocaleDateString()}\n\n`;
+
+    // Self-evaluation section
+    if (processedData.hasSelfEvaluation) {
+        csv += 'AUTOEVALUACIÓN DOCENTE\n';
+        csv += 'Pregunta,Puntuación\n';
+        
+        teacherQuestions.forEach((item, idx) => {
+            const questionId = item.id || (idx + 1);
+            const selfScore = processedData.selfScores.find(s => s.questionId === questionId);
+            if (selfScore && selfScore.score > 0) {
+                csv += `"${(item.question || item.text).replace(/"/g, '""')}",${selfScore.score}\n`;
+            }
+        });
+
+        const selfAverage = processedData.selfScores.reduce((sum, s) => sum + s.score, 0) / processedData.selfScores.length;
+        csv += `\nPromedio Autoevaluación,${selfAverage.toFixed(2)}\n\n`;
+    }
+
+    // Student evaluations section
+    if (processedData.hasStudentEvaluations) {
+        csv += 'EVALUACIÓN ESTUDIANTIL\n';
+        csv += `Número de evaluaciones recibidas: ${processedData.studentCount}\n`;
+        csv += 'Pregunta,Promedio\n';
+        
+        studentQuestions.forEach((item, idx) => {
+            const questionId = idx + 1;
+            const studentScore = processedData.studentScores.find(s => s.questionId === questionId);
+            if (studentScore && studentScore.score > 0) {
+                csv += `"${(item.question || item.text).replace(/"/g, '""')}",${studentScore.score.toFixed(2)}\n`;
+            }
+        });
+
+        const studentAverage = processedData.studentScores.reduce((sum, s) => sum + s.score, 0) / processedData.studentScores.length;
+        csv += `\nPromedio Estudiantes,${studentAverage.toFixed(2)}\n\n`;
+    }
+
+    // Summary
+    if (processedData.hasSelfEvaluation && processedData.hasStudentEvaluations) {
+        const selfAverage = processedData.selfScores.reduce((sum, s) => sum + s.score, 0) / processedData.selfScores.length;
+        const studentAverage = processedData.studentScores.reduce((sum, s) => sum + s.score, 0) / processedData.studentScores.length;
+        const difference = selfAverage - studentAverage;
+        
+        csv += 'RESUMEN COMPARATIVO\n';
+        csv += `Promedio Autoevaluación,${selfAverage.toFixed(2)}\n`;
+        csv += `Promedio Estudiantes,${studentAverage.toFixed(2)}\n`;
+        csv += `Diferencia,${difference.toFixed(2)}\n`;
+    }
+
+    // Download CSV
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `resultados_evaluacion_${teacherName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
