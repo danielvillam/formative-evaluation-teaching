@@ -79,7 +79,7 @@ export async function populateTeachers(userEmail = null) {
         const teachers = await fetchTeachers();
         if (teachers && teachers.length > 0) {
             teachers.forEach(teacher => {
-                const teacherId = teacher._id || teacher.id;
+                const teacherId = teacher.id; // Use email as teacherId
                 const isEvaluated = evaluatedTeacherIds.includes(teacherId);
                 
                 const option = document.createElement('option');
