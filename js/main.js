@@ -412,13 +412,13 @@ function init() {
                             { 
                                 label: 'Autoevaluación', 
                                 data: [selfAverage.toFixed(2)], 
-                                backgroundColor: '#0d6efd',
+                                backgroundColor: '#466B3F',
                                 hidden: !processedData.hasSelfEvaluation
                             },
                             { 
                                 label: `Estudiantes (${processedData.studentCount})`, 
                                 data: [studentAverage.toFixed(2)], 
-                                backgroundColor: '#ffc107',
+                                backgroundColor: '#94B43B',
                                 hidden: !processedData.hasStudentEvaluations
                             }
                         ]
@@ -470,17 +470,17 @@ function init() {
                             { 
                                 label: 'Autoevaluación', 
                                 data: selfDistribution, 
-                                backgroundColor: 'rgba(13,110,253,0.2)', 
-                                borderColor: '#0d6efd', 
-                                pointBackgroundColor: '#0d6efd',
+                                backgroundColor: 'rgba(70,107,63,0.2)', 
+                                borderColor: '#466B3F', 
+                                pointBackgroundColor: '#466B3F',
                                 hidden: !processedData.hasSelfEvaluation
                             },
                             { 
                                 label: `Estudiantes (${processedData.studentCount})`, 
                                 data: studentDistribution, 
-                                backgroundColor: 'rgba(255,193,7,0.2)', 
-                                borderColor: '#ffc107', 
-                                pointBackgroundColor: '#ffc107',
+                                backgroundColor: 'rgba(148,180,59,0.2)', 
+                                borderColor: '#94B43B', 
+                                pointBackgroundColor: '#94B43B',
                                 hidden: !processedData.hasStudentEvaluations
                             }
                         ]
@@ -741,7 +741,7 @@ function init() {
                 error.className = 'eval-error-msg';
                 error.textContent = 'Por favor responde esta pregunta.';
                 error.style.display = 'block';
-                error.style.color = '#dc3545';
+                error.style.color = '#A61C31';
                 error.style.fontSize = '0.95em';
                 error.style.marginTop = '0.25rem';
                 itemDiv.appendChild(error);
@@ -850,7 +850,7 @@ function init() {
                 error.className = 'eval-error-msg';
                 error.textContent = 'Por favor responde esta pregunta.';
                 error.style.display = 'block';
-                error.style.color = '#dc3545';
+                error.style.color = '#A61C31';
                 error.style.fontSize = '0.95em';
                 error.style.marginTop = '0.25rem';
                 itemDiv.appendChild(error);
