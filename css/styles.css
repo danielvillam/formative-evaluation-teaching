@@ -200,6 +200,32 @@ body {
     color: #ffffff;
 }
 
+.btn-outline-secondary {
+    background: transparent;
+    border: 2px solid var(--unal-gray-light);
+    color: var(--unal-gray-dark);
+}
+.btn-outline-secondary:hover {
+    background: var(--unal-gray-light);
+    border-color: var(--unal-gray-dark);
+    color: var(--unal-gray-dark);
+}
+
+/* Botones outline-secondary en headers oscuros - hacerlos blancos */
+.card-header.role-teacher .btn-outline-secondary,
+.card-header.role-student .btn-outline-secondary,
+.card-header.role-director .btn-outline-secondary {
+    border-color: rgba(255, 255, 255, 0.5);
+    color: #ffffff;
+}
+.card-header.role-teacher .btn-outline-secondary:hover,
+.card-header.role-student .btn-outline-secondary:hover,
+.card-header.role-director .btn-outline-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #ffffff;
+    color: #ffffff;
+}
+
 /* Small secondary buttons in headers */
 .btn-sm { padding: 0.35rem 0.5rem; font-size: 0.85rem; border-radius: 6px; }
 
