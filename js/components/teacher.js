@@ -57,7 +57,7 @@ export function renderTeacherSection() {
                     <div class="card-header role-teacher">
                         <h5 class="mb-0">Resultados</h5>
                         <div class="header-actions">
-                            <span class="text-secondary" title="Resultados">
+                            <span class="text-white" title="Resultados">
                                 <i class="bi bi-download fs-5"></i>
                             </span>
                         </div>
@@ -74,7 +74,7 @@ export function renderTeacherSection() {
                     <div class="card-header role-teacher">
                         <h5 class="mb-0">Plan de Mejora</h5>
                         <div class="header-actions">
-                            <span class="text-secondary" title="Plan de mejora">
+                            <span class="text-white" title="Plan de mejora">
                                 <i class="bi bi-journal-text fs-5"></i>
                             </span>
                         </div>
