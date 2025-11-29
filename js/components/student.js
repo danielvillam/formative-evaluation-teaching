@@ -45,7 +45,7 @@ export function renderStudentSection() {
 
 export async function loadData() {
     try {
-        const data = await fetch('/api/getStudentQuestions');
+        const data = await fetch('/api/questions?type=student');
         return await data.json();
     } catch (error) {
         console.error("Error al cargar preguntas de la base de datos", error);
@@ -64,7 +64,7 @@ export async function populateTeachers(userEmail = null) {
     let evaluatedTeacherIds = [];
     if (userEmail) {
         try {
-            const response = await fetch(`/api/get-student-evaluations?userEmail=${encodeURIComponent(userEmail)}`);
+            const response = await fetch(`/api/evaluations?action=student&userEmail=${encodeURIComponent(userEmail)}`);
             if (response.ok) {
                 const data = await response.json();
                 evaluatedTeacherIds = data.evaluatedTeacherIds || [];
@@ -160,7 +160,7 @@ export async function renderStudentEvaluationItems() {
 
 export async function fetchTeachers() {
     try {
-        const response = await fetch('/api/get-teachers');
+        const response = await fetch('/api/teachers');
         if (!response.ok) {
             // Try to parse JSON error, but handle if it's HTML
             let errorMessage = 'Error al obtener los docentes';
@@ -200,7 +200,7 @@ export async function submitStudentEvaluation(teacherId, evaluationData, userEma
     }
 
     try {
-        const response = await fetch('/api/submit-evaluation', {
+        const response = await fetch('/api/evaluations?action=submit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ teacherId, evaluationData, userEmail, userRole })

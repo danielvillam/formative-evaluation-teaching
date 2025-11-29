@@ -205,7 +205,7 @@ export function renderTeacherSection() {
 
 export async function loadData() {
     try {
-        const data = await fetch('/api/getTeacherQuestions');
+        const data = await fetch('/api/questions?type=teacher');
         return await data.json();
     } catch (error) {
         console.error("Error al cargar preguntas de la base de datos", error);
@@ -273,7 +273,7 @@ export async function checkTeacherSelfEvaluation(teacherId) {
     }
 
     try {
-        const response = await fetch(`/api/get-teacher-self-evaluation?teacherId=${encodeURIComponent(teacherId)}`);
+        const response = await fetch(`/api/evaluations?action=teacher-self-check&teacherId=${encodeURIComponent(teacherId)}`);
         
         if (!response.ok) {
             console.error('Error checking teacher self-evaluation:', response.status);
@@ -321,7 +321,7 @@ export async function submitTeacherEvaluation(teacherId, evaluationData, userEma
     }
 
     try {
-        const response = await fetch('/api/submit-evaluation', {
+        const response = await fetch('/api/evaluations?action=submit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ teacherId, evaluationData, userEmail, userRole })
@@ -348,7 +348,7 @@ export async function getTeacherResults(teacherId) {
     }
 
     try {
-        const response = await fetch(`/api/get-teacher-results?teacherId=${encodeURIComponent(teacherId)}`);
+        const response = await fetch(`/api/evaluations?action=teacher-results&teacherId=${encodeURIComponent(teacherId)}`);
         
         if (!response.ok) {
             console.error('Error fetching teacher results:', response.status);
@@ -486,7 +486,7 @@ export async function getImprovementPlans(teacherId) {
     }
 
     try {
-        const response = await fetch(`/api/get-improvement-plans?teacherId=${encodeURIComponent(teacherId)}`);
+        const response = await fetch(`/api/improvement-plans?teacherId=${encodeURIComponent(teacherId)}`);
         
         if (!response.ok) {
             console.error('Error fetching improvement plans:', response.status);

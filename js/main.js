@@ -316,7 +316,7 @@ function init() {
         // Load teacher questions if not already loaded
         let teacherQuestions = window.evaluationItems;
         if (!teacherQuestions) {
-            const response = await fetch('/api/getTeacherQuestions');
+            const response = await fetch('/api/questions?type=teacher');
             teacherQuestions = await response.json();
             window.evaluationItems = teacherQuestions;
         }
@@ -324,7 +324,7 @@ function init() {
         // Load student questions
         let studentQuestions = window.studentEvaluationItems;
         if (!studentQuestions) {
-            const response = await fetch('/api/getStudentQuestions');
+            const response = await fetch('/api/questions?type=student');
             studentQuestions = await response.json();
             window.studentEvaluationItems = studentQuestions;
         }
@@ -592,7 +592,7 @@ function init() {
             // Load teacher questions if not already loaded
             let teacherQuestions = window.evaluationItems;
             if (!teacherQuestions) {
-                const response = await fetch('/api/getTeacherQuestions');
+                const response = await fetch('/api/questions?type=teacher');
                 teacherQuestions = await response.json();
                 window.evaluationItems = teacherQuestions;
             }
@@ -600,7 +600,7 @@ function init() {
             // Load student questions
             let studentQuestions = window.studentEvaluationItems;
             if (!studentQuestions) {
-                const response = await fetch('/api/getStudentQuestions');
+                const response = await fetch('/api/questions?type=student');
                 studentQuestions = await response.json();
                 window.studentEvaluationItems = studentQuestions;
             }
@@ -726,14 +726,14 @@ function init() {
             // Load questions if needed
             let teacherQuestions = window.evaluationItems;
             if (!teacherQuestions) {
-                const response = await fetch('/api/getTeacherQuestions');
+                const response = await fetch('/api/questions?type=teacher');
                 teacherQuestions = await response.json();
                 window.evaluationItems = teacherQuestions;
             }
 
             let studentQuestions = window.studentEvaluationItems;
             if (!studentQuestions) {
-                const response = await fetch('/api/getStudentQuestions');
+                const response = await fetch('/api/questions?type=student');
                 studentQuestions = await response.json();
                 window.studentEvaluationItems = studentQuestions;
             }
@@ -1045,7 +1045,7 @@ function init() {
 
         // Save the plan to backend
         try {
-            const response = await fetch('/api/save-improvement-plan', {
+            const response = await fetch('/api/improvement-plans', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -1183,13 +1183,13 @@ async function handleRegistration(e) {
                 // If teacher, add to teachers collection
                 if (role === 'teacher') {
                     try {
-                        const teacherResponse = await fetch('/api/add-teacher', {
+                        const teacherResponse = await fetch('/api/teachers', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify({
-                                teacherId: email,
+                                id: email,
                                 name: email.split('@')[0] // Use email prefix as default name
                             })
                         });
@@ -1514,13 +1514,13 @@ async function handleLogin(e) {
                         // If teacher, ensure they're in the teachers collection
                         if (role === 'teacher') {
                             try {
-                                const teacherResponse = await fetch('/api/add-teacher', {
+                                const teacherResponse = await fetch('/api/teachers', {
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
                                     },
                                     body: JSON.stringify({
-                                        teacherId: email,
+                                        id: email,
                                         name: email.split('@')[0]
                                     })
                                 });
