@@ -200,7 +200,7 @@ export function renderDirectorCharts(stats) {
                 datasets: [{
                     label: 'Promedio General',
                     data: teachersWithData.map(t => t.overallAverage),
-                    backgroundColor: '#0d6efd'
+                    backgroundColor: '#94B43B'
                 }]
             },
             options: {
@@ -247,7 +247,7 @@ export function renderDirectorCharts(stats) {
                         teachersWithStudentEval - teachersWithBoth,
                         teachersWithNone
                     ],
-                    backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545']
+                    backgroundColor: ['#466B3F', '#94B43B', '#A61C31', '#B1B2B0']
                 }]
             },
             options: {
@@ -276,9 +276,9 @@ export function renderDirectorCharts(stats) {
                 datasets: [{
                     label: 'Promedio por Categoría',
                     data: values,
-                    backgroundColor: 'rgba(13,110,253,0.2)',
-                    borderColor: '#0d6efd',
-                    pointBackgroundColor: '#0d6efd'
+                    backgroundColor: 'rgba(148,180,59,0.2)',
+                    borderColor: '#94B43B',
+                    pointBackgroundColor: '#94B43B'
                 }]
             },
             options: {
