@@ -190,6 +190,12 @@ export function renderTeacherSection() {
                         <h5 class="mb-3">Resumen y oportunidades de mejora</h5>
                         <div id="results-summary" class="alert alert-info" style="min-height:2.5em"></div>
                     </div>
+                    <div class="mt-4" id="improvement-plans-section">
+                        <h5 class="mb-3"><i class="bi bi-journal-text me-2"></i>Planes de Mejora</h5>
+                        <div id="improvement-plans-container">
+                            <!-- Se llenará dinámicamente -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -471,4 +477,92 @@ export function exportTeacherResults(teacherName, processedData, teacherQuestion
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+export async function getImprovementPlans(teacherId) {
+    if (!teacherId) {
+        console.error('Teacher ID is required');
+        return null;
+    }
+
+    try {
+        const response = await fetch(`/api/get-improvement-plans?teacherId=${encodeURIComponent(teacherId)}`);
+        
+        if (!response.ok) {
+            console.error('Error fetching improvement plans:', response.status);
+            return null;
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching improvement plans:', error);
+        return null;
+    }
+}
+
+export function renderImprovementPlans(plansData) {
+    const container = document.getElementById('improvement-plans-container');
+    if (!container) return;
+
+    if (!plansData || !plansData.plans || plansData.plans.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No hay planes de mejora registrados. Crea uno desde la sección "Plan de Mejora".
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = '';
+
+    plansData.plans.forEach((plan, index) => {
+        const planCard = document.createElement('div');
+        planCard.className = 'card mb-3';
+        
+        const deadline = new Date(plan.deadline);
+        const createdAt = new Date(plan.createdAt);
+        const today = new Date();
+        const isOverdue = deadline < today;
+        
+        planCard.innerHTML = `
+            <div class="card-header d-flex justify-content-between align-items-center ${isOverdue ? 'bg-danger text-white' : 'bg-light'}">
+                <h6 class="mb-0">
+                    <i class="bi bi-calendar-event me-2"></i>
+                    Plan de Mejora #${plansData.plans.length - index}
+                </h6>
+                <span class="badge ${isOverdue ? 'bg-light text-danger' : 'bg-secondary'}">
+                    ${isOverdue ? 'Vencido' : 'Activo'}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <strong><i class="bi bi-bullseye me-2"></i>Meta principal:</strong>
+                        <p class="mb-0 ms-4">${plan.goal}</p>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <strong><i class="bi bi-list-check me-2"></i>Acciones a implementar:</strong>
+                        <p class="mb-0 ms-4" style="white-space: pre-wrap;">${plan.actions}</p>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong><i class="bi bi-graph-up me-2"></i>Indicadores de éxito:</strong>
+                        <p class="mb-0 ms-4">${plan.indicators}</p>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong><i class="bi bi-calendar-check me-2"></i>Fecha límite:</strong>
+                        <p class="mb-0 ms-4">${deadline.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    </div>
+                </div>
+                <hr>
+                <small class="text-muted">
+                    <i class="bi bi-clock me-1"></i>
+                    Creado el ${createdAt.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </small>
+            </div>
+        `;
+        
+        container.appendChild(planCard);
+    });
 }

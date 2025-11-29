@@ -41,7 +41,7 @@ function showToast(message, options = {}) {
 import { renderNavbar } from './components/navbar.js';
 import { renderLoginSection } from './components/login.js';
 import { renderRegistrationForm } from './components/registration.js';
-import { renderTeacherSection, renderEvaluationItems, submitTeacherEvaluation, updateSelfEvaluationButton, getTeacherResults, processTeacherResults, exportTeacherResults } from './components/teacher.js';
+import { renderTeacherSection, renderEvaluationItems, submitTeacherEvaluation, updateSelfEvaluationButton, getTeacherResults, processTeacherResults, exportTeacherResults, getImprovementPlans, renderImprovementPlans } from './components/teacher.js';
 import { renderStudentSection, populateTeachers, renderStudentEvaluationItems, submitStudentEvaluation } from './components/student.js';
 import { renderDirectorSection, loadDirectorData, updateDirectorDashboard, exportDirectorReport } from './components/director.js';
 import { Clerk } from '@clerk/clerk-js';
@@ -555,6 +555,12 @@ function init() {
             summaryDiv.innerHTML = html;
         }
 
+        // Load and render improvement plans
+        const plansData = await getImprovementPlans(teacherId);
+        if (plansData) {
+            renderImprovementPlans(plansData);
+        }
+
         // Scroll to results section
         resultsVis.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -686,6 +692,12 @@ function init() {
                 window.comparisonChart.data.datasets[0].data = selfDistribution;
                 window.comparisonChart.data.datasets[1].data = studentDistribution;
                 window.comparisonChart.update();
+            }
+
+            // Reload improvement plans
+            const plansData = await getImprovementPlans(teacherId);
+            if (plansData) {
+                renderImprovementPlans(plansData);
             }
 
             showToast('Resultados actualizados correctamente.', { type: 'success' });
@@ -1010,7 +1022,7 @@ function init() {
 
     // Handle improvement plan form submission
     const planForm = document.getElementById('improvement-plan-form');
-    if (planForm) planForm.addEventListener('submit', function(e) {
+    if (planForm) planForm.addEventListener('submit', async function(e) {
         e.preventDefault();
     // Simple validation for required fields
         const goal = planForm.goal.value.trim();
@@ -1021,15 +1033,61 @@ function init() {
             showToast('Por favor complete todos los campos.', { type: 'warning' });
             return;
         }
-    // Here you could save the plan to backend or localStorage
-        showToast('¡Plan de mejora guardado exitosamente!', { type: 'success' });
-    // Close modal after saving
-        const modalEl = document.getElementById('improvementPlanModal');
-        if (modalEl) {
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) modal.hide();
+
+        // Get teacher information
+        const teacherId = currentUser?.primaryEmailAddress?.emailAddress || currentUser?.email;
+        const userEmail = teacherId;
+
+        if (!teacherId) {
+            showToast('Error: No se pudo identificar al docente.', { type: 'danger' });
+            return;
         }
-        planForm.reset();
+
+        // Save the plan to backend
+        try {
+            const response = await fetch('/api/save-improvement-plan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    teacherId, 
+                    userEmail,
+                    goal, 
+                    actions, 
+                    indicators, 
+                    deadline 
+                })
+            });
+
+            if (!response.ok) {
+                const errorDetails = await response.json();
+                throw new Error(`Error del servidor: ${errorDetails.message || 'Error desconocido'}`);
+            }
+
+            const result = await response.json();
+            console.log('Improvement plan saved successfully:', result);
+            
+            showToast('¡Plan de mejora guardado exitosamente!', { type: 'success' });
+            
+            // Reload improvement plans if results section is visible
+            const resultsVis = document.getElementById('results-visualization');
+            if (resultsVis && resultsVis.style.display !== 'none') {
+                const plansData = await getImprovementPlans(teacherId);
+                if (plansData) {
+                    renderImprovementPlans(plansData);
+                }
+            }
+            
+            // Close modal after saving
+            const modalEl = document.getElementById('improvementPlanModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
+            planForm.reset();
+        } catch (error) {
+            console.error('Error al guardar el plan de mejora:', error);
+            showToast('Error al guardar el plan de mejora. Por favor, intente nuevamente.', { type: 'danger' });
+        }
     });
 
     // Handle cancel button in improvement plan modal
