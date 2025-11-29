@@ -8,15 +8,34 @@ function showToast(message, options = {}) {
     toast.setAttribute('aria-live', 'assertive');
     toast.setAttribute('aria-atomic', 'true');
     toast.style.minWidth = '250px';
+    toast.style.position = 'relative';
+    toast.style.overflow = 'hidden';
+    
+    const delay = options.delay || 3500;
+    
     toast.innerHTML = `
         <div class="d-flex">
             <div class="toast-body">${message}</div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
         </div>
+        <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: rgba(255,255,255,0.3);">
+            <div class="toast-progress" style="height: 100%; background: rgba(255,255,255,0.8); width: 100%; transition: width ${delay}ms linear;"></div>
+        </div>
     `;
     container.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast, { delay: options.delay || 3500 });
+    
+    const bsToast = new bootstrap.Toast(toast, { delay: delay });
     bsToast.show();
+    
+    // Animate progress bar
+    const progressBar = toast.querySelector('.toast-progress');
+    if (progressBar) {
+        // Small delay to ensure transition works
+        setTimeout(() => {
+            progressBar.style.width = '0%';
+        }, 10);
+    }
+    
     toast.addEventListener('hidden.bs.toast', () => toast.remove());
 }
 import { renderNavbar } from './components/navbar.js';
@@ -540,6 +559,14 @@ function init() {
         resultsVis.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
+    // Close results button
+    const closeResultsBtn = document.getElementById('close-results');
+    if (closeResultsBtn) closeResultsBtn.addEventListener('click', () => {
+        const resultsSection = document.getElementById('results-visualization');
+        if (resultsSection) resultsSection.style.display = 'none';
+        showToast('Visualización cerrada.', { type: 'secondary', delay: 2000 });
+    });
+
     // Refresh teacher results button
     const refreshResultsBtn = document.getElementById('refresh-results');
     if (refreshResultsBtn) refreshResultsBtn.addEventListener('click', async () => {
@@ -759,17 +786,16 @@ function init() {
             const checked = teacherEvalForm.querySelector(`input[name='eval-${item.id}']:checked`);
             scores[item.id] = checked ? parseInt(checked.value, 10) : null;
         });
-        const reflection = document.getElementById('reflection').value;
         
         const userEmail = currentUser?.primaryEmailAddress?.emailAddress || currentUser?.email || 'anonimo';
         const teacherId = userEmail; // Use email as unique identifier
         const userRole = currentRole || 'teacher';
         
-        console.log('Evaluación enviada:', { scores, reflection, teacherId, userEmail, userRole });
+        console.log('Evaluación enviada:', { scores, teacherId, userEmail, userRole });
         
         // Submit to MongoDB
         try {
-            await submitTeacherEvaluation(teacherId, { scores, reflection }, userEmail, userRole);
+            await submitTeacherEvaluation(teacherId, { scores }, userEmail, userRole);
             showToast('¡Evaluación enviada con éxito!', { type: 'success' });
             
             // Update button status to show evaluation is completed
@@ -786,9 +812,6 @@ function init() {
                 const radios = document.getElementsByName(`eval-${item.id}`);
                 radios.forEach(r => r.checked = false);
             });
-            // Clear textarea
-            const reflectionInput = document.getElementById('reflection');
-            if (reflectionInput) reflectionInput.value = '';
         } catch (error) {
             console.error('Error al enviar evaluación:', error);
             showToast('Error al enviar la evaluación. Por favor, intente nuevamente.', { type: 'danger' });
@@ -825,6 +848,32 @@ function init() {
             }
         });
     }
+    // Cancel button for student evaluation
+    const cancelStudentEvalBtn = document.getElementById('cancel-student-eval');
+    if (cancelStudentEvalBtn) {
+        cancelStudentEvalBtn.addEventListener('click', function() {
+            const selectTeacher = document.getElementById('select-teacher');
+            const studentForm = document.getElementById('student-eval-form');
+            const formEl = document.getElementById('student-evaluation-form');
+            
+            // Reset select to default option
+            if (selectTeacher) selectTeacher.value = '';
+            
+            // Reset form
+            if (studentForm) studentForm.reset();
+            
+            // Hide evaluation form
+            if (formEl) formEl.style.display = 'none';
+            
+            // Clear any error messages
+            if (studentForm) {
+                studentForm.querySelectorAll('.eval-error-msg').forEach(e => e.remove());
+            }
+            
+            showToast('Evaluación cancelada.', { type: 'secondary', delay: 2000 });
+        });
+    }
+
     const studentForm = document.getElementById('student-eval-form');
     if (studentForm) studentForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -945,14 +994,6 @@ function init() {
         }
     });
 
-    // Small header button: open improvement plan
-    const openPlanBtn = document.getElementById('open-plan');
-    if (openPlanBtn) openPlanBtn.addEventListener('click', () => {
-        if (!hasRole('teacher') && !hasRole('director')) return alert('No tienes permiso para ver el plan.');
-    // Example: show modal or navigate to section. Replace with real modal if needed.
-        alert('Aquí se abriría el Plan de Mejora (implementa modal o navegación).');
-    });
-
     // Main body button: create improvement plan
     const improvementBtn = document.getElementById('improvement-plan');
     if (improvementBtn) improvementBtn.addEventListener('click', () => {
@@ -990,6 +1031,26 @@ function init() {
         }
         planForm.reset();
     });
+
+    // Handle cancel button in improvement plan modal
+    const improvementPlanModal = document.getElementById('improvementPlanModal');
+    if (improvementPlanModal) {
+        improvementPlanModal.addEventListener('hidden.bs.modal', function() {
+            const planForm = document.getElementById('improvement-plan-form');
+            if (planForm) {
+                // Check if form has any data before resetting
+                const hasData = planForm.goal.value.trim() || 
+                               planForm.actions.value.trim() || 
+                               planForm.indicators.value.trim() || 
+                               planForm.deadline.value;
+                
+                if (hasData) {
+                    planForm.reset();
+                    showToast('Plan de mejora cancelado.', { type: 'secondary', delay: 2000 });
+                }
+            }
+        });
+    }
 
 }
 

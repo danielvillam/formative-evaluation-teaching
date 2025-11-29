@@ -33,6 +33,7 @@ export function renderStudentSection() {
 
                         <div class="mt-3">
                             <button type="submit" class="btn btn-primary">Enviar Evaluación</button>
+                            <button type="button" id="cancel-student-eval" class="btn btn-secondary ms-2">Cancelar</button>
                         </div>
                     </form>
                 </div>

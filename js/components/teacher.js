@@ -57,9 +57,9 @@ export function renderTeacherSection() {
                     <div class="card-header role-teacher">
                         <h5 class="mb-0">Resultados</h5>
                         <div class="header-actions">
-                            <button class="btn btn-sm btn-outline-secondary" id="download-results" title="Descargar">
-                                <i class="bi bi-download"></i>
-                            </button>
+                            <span class="text-secondary" title="Resultados">
+                                <i class="bi bi-download fs-5"></i>
+                            </span>
                         </div>
                     </div>
                     <div class="card-body">
@@ -74,9 +74,9 @@ export function renderTeacherSection() {
                     <div class="card-header role-teacher">
                         <h5 class="mb-0">Plan de Mejora</h5>
                         <div class="header-actions">
-                            <button class="btn btn-sm btn-outline-secondary" id="open-plan" title="Ver plan">
-                                <i class="bi bi-journal-text"></i>
-                            </button>
+                            <span class="text-secondary" title="Plan de mejora">
+                                <i class="bi bi-journal-text fs-5"></i>
+                            </span>
                         </div>
                     </div>
                     <div class="card-body">
@@ -108,11 +108,6 @@ export function renderTeacherSection() {
                     <form id="teacher-eval-form">
                         <div id="teacher-evaluation-items"></div>
 
-                        <div class="mt-4">
-                            <h5>Reflexión sobre la práctica docente</h5>
-                            <textarea class="form-control" id="reflection" rows="4" placeholder="Escriba aquí sus reflexiones..."></textarea>
-                        </div>
-
                         <div class="mt-3 d-flex gap-2">
                             <button type="submit" class="btn btn-success">Enviar Evaluación</button>
                             <button type="button" class="btn btn-secondary" id="cancel-eval">Cancelar</button>
@@ -132,6 +127,9 @@ export function renderTeacherSection() {
                         </button>
                         <button class="btn btn-sm btn-light" id="export-teacher-results" title="Exportar resultados">
                             <i class="bi bi-download"></i> Exportar
+                        </button>
+                        <button class="btn btn-sm btn-secondary" id="close-results" title="Cerrar">
+                            <i class="bi bi-x-lg"></i> Cerrar
                         </button>
                     </div>
                 </div>
