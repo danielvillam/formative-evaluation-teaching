@@ -1,14 +1,47 @@
 {
+  "name": "formative-teaching-evaluation-system",
+  "version": "1.0.0",
+  "description": "Sistema de Evaluación Formativa Docente para la Universidad Nacional de Colombia - Plataforma web para autoevaluación docente, evaluación estudiantil y análisis de resultados",
   "type": "module",
+  "author": {
+    "name": "Universidad Nacional de Colombia",
+    "email": "jvillame@unal.edu.co"
+  },
+  "license": "MIT",
+  "keywords": [
+    "evaluacion",
+    "docente",
+    "formativa",
+    "educacion",
+    "unal",
+    "universidad",
+    "estudiantes",
+    "profesores"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unal/formative-teaching-evaluation-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/unal/formative-teaching-evaluation-system/issues"
+  },
+  "homepage": "https://github.com/unal/formative-teaching-evaluation-system#readme",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite",
+    "clean": "rm -rf dist node_modules"
+  },
   "dependencies": {
     "@clerk/clerk-js": "^5.108.0",
     "@clerk/clerk-sdk-node": "^4.13.23",
     "mongodb": "^6.21.0",
     "vite": "^6.4.1"
   },
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  }
+  "devDependencies": {}
 }
