@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/unal/formative-teaching-evaluation-system#readme",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=24.0.0",
     "npm": ">=9.0.0"
   },
   "scripts": {
